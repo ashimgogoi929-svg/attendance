@@ -1,516 +1,739 @@
 <!doctype html>
 <html>
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Sang Fa — Attendance (No Login)</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;700&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg:#f6f7fb; --card:#fff; --muted:#666; --accent:#0b6efd;
-    --ok:#16a34a; --bad:#dc2626; --late:#f59e0b;
-  }
-  *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
-  body{margin:0;background:var(--bg);color:#111;padding:12px}
-  header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  h1{margin:0;font-size:20px}
-  .small{color:var(--muted);font-size:13px}
-  .top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}
-  input,textarea,select,button{font-size:14px}
-  input[type=text], textarea,select{padding:8px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;width:100%}
-  .btn{padding:8px 10px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer}
-  .btn.ghost{background:#fff;color:var(--accent);border:1px solid #dbeafe}
-  .btn.warn{background:var(--bad)}
-  .layout{display:grid;grid-template-columns:1fr;gap:12px;max-width:1200px}
-  .card{background:var(--card);padding:12px;border-radius:10px;box-shadow:0 1px 6px rgba(12,18,30,.04)}
-  .student-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:10px}
-  .student{padding:10px;border-radius:8px;border:1px solid #eef2ff;background:#fff;display:flex;flex-direction:column;gap:8px}
-  .name{font-weight:600}
-  .roll{font-size:12px;color:var(--muted)}
-  .status-row{display:flex;gap:6px;align-items:center}
-  .sbtn{flex:1;padding:8px;border-radius:8px;border:none;cursor:pointer}
-  .present{background:var(--ok);color:#fff}
-  .absent{background:var(--bad);color:#fff}
-  .late{background:var(--late);color:#fff}
-  .smallmuted{font-size:12px;color:var(--muted)}
-  #qrPreview img{max-width:120px;border-radius:6px}
-  @media (min-width:880px){
-    .layout{grid-template-columns:420px 1fr}
-  }
-</style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Sang Fa — Attendance (Admin + Trainer Password)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#f6f7fb;--card:#fff;--muted:#666;--accent:#0b6efd;--ok:#16a34a;--bad:#dc2626;--late:#f59e0b}
+    *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+    body{margin:0;background:var(--bg);color:#111;padding:12px}
+    .wrap{max-width:1100px;margin:0 auto}
+    header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    h1{margin:0;font-size:20px}
+    .small{color:var(--muted);font-size:13px}
+    .card{background:var(--card);padding:12px;border-radius:10px;box-shadow:0 1px 6px rgba(12,18,30,.04);margin-top:12px}
+    input,select,textarea,button{font-size:14px}
+    input,select,textarea{padding:8px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;width:100%}
+    .row{display:flex;gap:8px;flex-wrap:wrap}
+    .col{flex:1;min-width:120px}
+    .btn{padding:9px 12px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer}
+    .btn.ghost{background:#fff;color:var(--accent);border:1px solid #dbeafe}
+    .btn.warn{background:var(--bad)}
+    .student-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:10px}
+    .student{padding:10px;border-radius:8px;border:1px solid #eef2ff;background:#fff;display:flex;flex-direction:column;gap:8px}
+    .name{font-weight:600}
+    .roll{font-size:12px;color:var(--muted)}
+    .status-row{display:flex;gap:6px;align-items:center}
+    .sbtn{flex:1;padding:8px;border-radius:8px;border:none;cursor:pointer}
+    .present{background:var(--ok);color:#fff}
+    .absent{background:var(--bad);color:#fff}
+    .late{background:var(--late);color:#fff}
+    .smallmuted{font-size:12px;color:var(--muted)}
+    @media(min-width:900px){ .layout{display:grid;grid-template-columns:420px 1fr;gap:12px} }
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;padding:18px}
+    .modal .card{max-width:900px;width:100%}
+  </style>
 </head>
 <body>
+<div class="wrap">
 
 <header>
   <div>
-    <h1>Sang Fa — Attendance (No Login)</h1>
-    <div class="small">Multiple trainers | QR | Monthly & Fees CSV | Device assignment</div>
+    <h1>Sang Fa — Attendance (Admin + Trainer Password)</h1>
+    <div class="small">Two-level system: Admin sets password → creates trainers and trainer passwords → Trainers login</div>
   </div>
 </header>
 
-<div class="top">
-  <div style="display:flex;gap:8px;align-items:center;width:100%;max-width:1200px">
-    <input id="trainerInput" placeholder="Type trainer/class name (e.g., Ashim Gogoi)" />
-    <button id="setTrainerBtn" class="btn">Set</button>
-    <select id="trainerList" style="min-width:180px"></select>
-    <button id="addTrainerBtn" class="btn ghost">Add Trainer</button>
-    <button id="assignDeviceBtn" class="btn ghost">Assign This Device</button>
-    <button id="clearDeviceBtn" class="btn ghost">Clear Device Assign</button>
+<!-- LOGIN / DASHBOARD area -->
+<div id="loginArea" class="card">
+  <!-- If admin not set, show admin setup -->
+  <div id="adminSetup" style="display:none">
+    <strong>First-time setup — Create Admin Password</strong>
+    <div class="smallmuted">Set an admin password (4-12 chars). You'll use it to manage trainers & assignments.</div>
+    <div style="margin-top:8px" class="row">
+      <input id="firstAdminPass" placeholder="Set admin password"/>
+      <input id="firstAdminPassConfirm" placeholder="Confirm password"/>
+      <button id="createAdminBtn" class="btn">Create Admin</button>
+    </div>
+  </div>
+
+  <!-- Login view -->
+  <div id="loginView" style="display:none">
+    <strong>Login</strong>
+    <div style="margin-top:8px" class="row">
+      <div class="col">
+        <label class="smallmuted">Mode</label>
+        <select id="loginMode">
+          <option value="trainer">Trainer Login</option>
+          <option value="admin">Admin Login</option>
+        </select>
+      </div>
+      <div class="col">
+        <label class="smallmuted">Trainer (for trainer login)</label>
+        <select id="loginTrainer"></select>
+      </div>
+    </div>
+    <div style="margin-top:8px" class="row">
+      <div class="col"><input id="loginPassword" placeholder="Enter password"/></div>
+      <div style="width:160px"><button id="doLoginBtn" class="btn">Login</button></div>
+    </div>
+    <div style="margin-top:8px" class="smallmuted">If you are admin, choose Admin mode and enter admin password.</div>
   </div>
 </div>
 
-<div class="layout">
-  <div class="card">
-    <strong>Add / Edit Student</strong>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-      <input id="regNo" placeholder="Registration No (e.g., R001)">
-      <input id="stuName" placeholder="Student full name">
-      <input id="dob" placeholder="DOB (YYYY-MM-DD)">
-      <input id="father" placeholder="Father name">
-      <input id="phone" placeholder="Phone (10 digit)">
-      <input id="belt" placeholder="Belt Rank (White/Yellow/Blue...)">
-      <input id="aadhaar" placeholder="Aadhaar (optional)">
-      <select id="level"><option value="Beginner">Beginner</option><option value="Advance">Advance</option></select>
-      <input id="fee" placeholder="Monthly Fee (₹)">
+<!-- Main app area -->
+<div id="appArea" style="display:none">
+  <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+    <div class="smallmuted">Logged in as: <strong id="currentUserText"></strong> (<span id="currentRole">role</span>)</div>
+    <div style="display:flex;gap:8px">
+      <button id="logoutBtn" class="btn ghost">Logout</button>
+      <button id="openAdminPanel" class="btn ghost" style="display:none">Admin Panel</button>
     </div>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button id="addStudentBtn" class="btn">Add Student</button>
-      <button id="importBtn" class="btn ghost">Import CSV</button>
-      <button id="exportStudentsBtn" class="btn ghost">Export Students CSV</button>
-      <button id="clearStudentsBtn" class="btn warn">Clear Students</button>
-    </div>
+  </div>
 
-    <hr/>
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div><strong>Saved Students</strong> <span id="studentCount" class="smallmuted">0</span></div>
-      <div class="smallmuted">Click student name to edit</div>
-    </div>
-    <div id="savedStudents" class="student-list" style="margin-top:8px"></div>
-
-    <hr/>
+  <div class="card layout" style="margin-top:12px">
+    <!-- Left: Student Form & Students -->
     <div>
-      <strong>QR Tools</strong>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <select id="qrSelect" style="flex:1"></select>
-        <button id="genQR" class="btn">Generate</button>
-        <button id="scanQR" class="btn ghost">Scan</button>
+      <strong id="classTitle">Class: <span id="className"></span></strong>
+      <div class="smallmuted">Switch class (trainer) from dropdown</div>
+      <div style="margin-top:8px" class="row">
+        <select id="classSelect"></select>
+        <button id="refreshClassBtn" class="btn ghost">Refresh</button>
       </div>
-      <div id="qrPreview" style="margin-top:8px"></div>
-    </div>
-  </div>
 
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center">
+      <hr/>
+
+      <strong>Add / Edit Student</strong>
+      <div class="smallmuted">Fill fields then Add Student (or edit existing)</div>
+      <div style="margin-top:8px">
+        <div class="row">
+          <input id="regNo" placeholder="Registration No (R001)"/>
+          <input id="stuName" placeholder="Full name"/>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input id="stuDob" type="date" placeholder="DOB"/>
+          <input id="stuFather" placeholder="Father name"/>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input id="stuPhone" placeholder="Phone"/>
+          <input id="stuBelt" placeholder="Belt"/>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input id="stuAadhaar" placeholder="Aadhaar"/>
+          <select id="stuLevel"><option>Beginner</option><option>Advance</option></select>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input id="stuFee" placeholder="Monthly Fee (₹)"/>
+          <div style="display:flex;gap:8px">
+            <button id="addStudentBtn" class="btn">Add Student</button>
+            <button id="updateStudentBtn" class="btn ghost" style="display:none">Update</button>
+            <button id="clearFormBtn" class="btn ghost">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <hr/>
+
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <strong>Saved Students</strong>
+        <div class="smallmuted" id="studentCount">0 students</div>
+      </div>
+      <div id="studentsList" class="student-list"></div>
+
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <button id="exportStudents" class="btn ghost">Export Students CSV</button>
+        <button id="importStudents" class="btn ghost">Import CSV</button>
+        <button id="clearStudents" class="btn warn">Clear Students</button>
+      </div>
+
+      <hr/>
+
       <div>
-        <div class="smallmuted">Class: <strong id="currentTrainer">Default</strong></div>
-        <div class="smallmuted">Date: <strong id="dateText"></strong></div>
+        <strong>QR Tools</strong>
+        <div class="smallmuted">Generate student QR or scan to mark present</div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <select id="qrSelect" style="flex:1"></select>
+          <button id="genQR" class="btn">Generate</button>
+          <button id="scanQR" class="btn ghost">Scan</button>
+        </div>
+        <div id="qrPreview" style="margin-top:8px"></div>
       </div>
-      <div class="smallmuted">Tap to mark — or scan QR</div>
     </div>
 
-    <div style="margin-top:12px">
-      <div id="markedCount" class="smallmuted">0 marked</div>
-      <div id="attendanceGrid" class="student-list" style="margin-top:8px"></div>
-    </div>
+    <!-- Right: Attendance and Reports -->
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div class="smallmuted">Class: <strong id="classNameText"></strong></div>
+          <div class="smallmuted">Date: <strong id="dateText"></strong></div>
+        </div>
+        <div class="smallmuted">Tap to mark</div>
+      </div>
 
-    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-      <button id="exportToday" class="btn">Export Today's CSV</button>
-      <button id="saveToday" class="btn ghost">Save Today</button>
-      <button id="resetBtn" class="btn ghost">Reset All to Absent</button>
-      <button id="exportMonth" class="btn ghost">Export Monthly CSV</button>
-      <button id="exportFees" class="btn ghost">Monthly Fees CSV</button>
-    </div>
+      <div style="margin-top:12px">
+        <div id="todayCount" class="smallmuted">0 marked</div>
+        <div id="attendanceGrid" class="student-list" style="margin-top:8px"></div>
+      </div>
 
-    <div style="margin-top:12px;color:var(--muted);font-size:12px">
-      Tip: Add students once per trainer. Device assignment locks the device to that trainer (so trainer can't switch without clearing device).
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button id="saveToday" class="btn">Save Today</button>
+        <button id="exportToday" class="btn ghost">Export Today's CSV</button>
+        <button id="exportMonth" class="btn ghost">Export Monthly CSV</button>
+        <button id="exportFees" class="btn ghost">Monthly Fees CSV</button>
+        <button id="resetAllAbsent" class="btn ghost">Reset All to Absent</button>
+      </div>
+
+      <div style="margin-top:12px;color:var(--muted);font-size:12px">
+        Tip: Admin creates trainer accounts and sets trainer passwords. Trainers login with trainer + password.
+      </div>
     </div>
   </div>
 </div>
 
-<!-- libs -->
+<!-- Admin Panel Modal -->
+<div id="adminModal" class="modal"><div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <strong>Admin Panel</strong>
+    <div><button id="closeAdminModal" class="btn ghost">Close</button></div>
+  </div>
+
+  <div style="margin-top:8px">
+    <div style="display:flex;gap:8px">
+      <div class="col">
+        <label class="smallmuted">Change Admin Password</label>
+        <input id="adminNewPass" placeholder="New admin password"/>
+      </div>
+      <div style="width:150px;align-self:end"><button id="changeAdminPassBtn" class="btn">Save</button></div>
+    </div>
+
+    <hr/>
+
+    <div>
+      <strong>Trainers</strong>
+      <div class="smallmuted">Add trainer name and set trainer password</div>
+      <div style="display:flex;gap:8px;margin-top:8px" class="row">
+        <input id="newTrainerName" placeholder="Trainer name"/>
+        <input id="newTrainerPass" placeholder="Trainer password"/>
+        <button id="addTrainerBtn" class="btn">Add Trainer</button>
+      </div>
+
+      <div style="margin-top:8px">
+        <label class="smallmuted">Existing Trainers</label>
+        <div id="trainersList"></div>
+      </div>
+    </div>
+
+    <hr/>
+
+    <div>
+      <strong>Device assignment (optional)</strong>
+      <div class="smallmuted">Assign this device to a trainer to lock switching on this device</div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <select id="deviceAssignSelect"></select>
+        <button id="assignDeviceBtn" class="btn">Assign</button>
+        <button id="clearDeviceBtn2" class="btn ghost">Clear</button>
+      </div>
+      <div id="deviceAssignedText" class="smallmuted" style="margin-top:8px"></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- dependencies -->
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <script>
-/* Simple attendance app (no login). Data stored in localStorage.
-   Keys:
-   - sf_trainers  -> array of trainer names
-   - sf_students_{trainer} -> array of students
-   - sf_att_{trainer}_{YYYY-MM-DD} -> attendance map
-   - sf_device_assign -> {deviceId: trainer}
-*/
+/* ----------------- STORAGE KEYS & HELPERS ----------------- */
+const KEY_ADMIN = 'sf_admin_v1'; // {hash: "..."}
+const KEY_TRAINERS = 'sf_trainers_v1'; // object: {name: {passHash:...}}
+const KEY_STUDENTS_PREFIX = 'sf_students_'; // + trainer
+const KEY_ATT_PREFIX = 'sf_att_'; // + trainer + '_' + date
+const KEY_DEVICE = 'sf_device_v1';
 
-const KEY_TRAINERS = 'sf_trainers_v1';
-const KEY_DEVICE = 'sf_device_assign_v1';
-const PREFIX_STU = 'sf_students_';
-const PREFIX_ATT = 'sf_att_';
-
-// helpers
-function nowDate(){ return new Date().toISOString().slice(0,10); }
+function hashStr(s){ // simple hash (not crypto) - ok for local use
+  let h=0; for(let i=0;i<s.length;i++){ h = ((h<<5)-h) + s.charCodeAt(i); h |= 0; } return String(h);
+}
 function lsGet(k, def){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; }catch(e){ return def; } }
 function lsSet(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
-function download(text, filename){ const b = new Blob([text], {type:'text/csv'}); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href=u; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); }
+function nowDate(){ return new Date().toISOString().slice(0,10); }
+function downloadCSV(text, filename){ const blob = new Blob([text], {type:'text/csv'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); }
 
-// DOM
-const trainerInput = document.getElementById('trainerInput');
-const setTrainerBtn = document.getElementById('setTrainerBtn');
-const trainerList = document.getElementById('trainerList');
-const addTrainerBtn = document.getElementById('addTrainerBtn');
-const assignDeviceBtn = document.getElementById('assignDeviceBtn');
-const clearDeviceBtn = document.getElementById('clearDeviceBtn');
+/* ----------------- APP STATE ----------------- */
+let adminObj = lsGet(KEY_ADMIN, null); // {hash: '...'}
+let trainersObj = lsGet(KEY_TRAINERS, {}); // { "Ashim": {passHash:'...'}, ... }
+let currentUser = null; // trainer name or 'ADMIN'
+let currentRole = null; // 'admin' or 'trainer'
+let currentTrainer = null; // active class/trainer for attendance
+let students = [];
+let attendance = {};
+let editingIndex = -1;
 
-const regNo = document.getElementById('regNo');
-const stuName = document.getElementById('stuName');
-const dob = document.getElementById('dob');
-const father = document.getElementById('father');
-const phone = document.getElementById('phone');
-const belt = document.getElementById('belt');
-const aadhaar = document.getElementById('aadhaar');
-const level = document.getElementById('level');
-const fee = document.getElementById('fee');
-const addStudentBtn = document.getElementById('addStudentBtn');
-const importBtn = document.getElementById('importBtn');
-const exportStudentsBtn = document.getElementById('exportStudentsBtn');
-const clearStudentsBtn = document.getElementById('clearStudentsBtn');
+/* ----------------- DOM ----------------- */
+const adminSetup = document.getElementById('adminSetup');
+const firstAdminPass = document.getElementById('firstAdminPass');
+const firstAdminPassConfirm = document.getElementById('firstAdminPassConfirm');
+const createAdminBtn = document.getElementById('createAdminBtn');
 
-const savedStudents = document.getElementById('savedStudents');
-const studentCount = document.getElementById('studentCount');
-const qrSelect = document.getElementById('qrSelect');
-const genQR = document.getElementById('genQR');
-const scanQR = document.getElementById('scanQR');
-const qrPreview = document.getElementById('qrPreview');
+const loginView = document.getElementById('loginView');
+const loginMode = document.getElementById('loginMode');
+const loginTrainer = document.getElementById('loginTrainer');
+const loginPassword = document.getElementById('loginPassword');
+const doLoginBtn = document.getElementById('doLoginBtn');
 
-const currentTrainerText = document.getElementById('currentTrainer');
-const dateText = document.getElementById('dateText');
-const attendanceGrid = document.getElementById('attendanceGrid');
-const markedCount = document.getElementById('markedCount');
+const loginArea = document.getElementById('loginArea');
+const appArea = document.getElementById('appArea');
+const currentUserText = document.getElementById('currentUserText');
+const currentRoleText = document.getElementById('currentRole');
+const logoutBtn = document.getElementById('logoutBtn');
+const openAdminPanel = document.getElementById('openAdminPanel');
 
-const exportToday = document.getElementById('exportToday');
-const saveToday = document.getElementById('saveToday');
-const resetBtn = document.getElementById('resetBtn');
-const exportMonth = document.getElementById('exportMonth');
-const exportFees = document.getElementById('exportFees');
+const classSelect = document.getElementById('classSelect');
+const className = document.getElementById('className');
+const classNameText = document.getElementById('classNameText');
+const classTitle = document.getElementById('classTitle');
 
-// state
-let trainers = lsGet(KEY_TRAINERS, ['Default']);
-let currentTrainer = trainers[0];
-let students = []; // loaded for current trainer
-let attendance = {}; // key -> status for today
-let deviceAssign = lsGet(KEY_DEVICE, {});
+const regNo = document.getElementById('regNo'), stuName = document.getElementById('stuName'), stuDob = document.getElementById('stuDob'), stuFather = document.getElementById('stuFather');
+const stuPhone = document.getElementById('stuPhone'), stuBelt = document.getElementById('stuBelt'), stuAadhaar = document.getElementById('stuAadhaar'), stuLevel = document.getElementById('stuLevel'), stuFee = document.getElementById('stuFee');
+const addStudentBtn = document.getElementById('addStudentBtn'), updateStudentBtn = document.getElementById('updateStudentBtn'), clearFormBtn = document.getElementById('clearFormBtn');
+const studentsList = document.getElementById('studentsList'), studentCount = document.getElementById('studentCount');
 
-// init
-function init(){
-  populateTrainers();
-  setTrainer(currentTrainer);
-  dateText.textContent = new Date().toLocaleString();
+const qrSelect = document.getElementById('qrSelect'), genQR = document.getElementById('genQR'), scanQR = document.getElementById('scanQR'), qrPreview = document.getElementById('qrPreview');
+
+const attendanceGrid = document.getElementById('attendanceGrid'), todayCount = document.getElementById('todayCount'), dateText = document.getElementById('dateText');
+const saveToday = document.getElementById('saveToday'), exportToday = document.getElementById('exportToday'), exportMonth = document.getElementById('exportMonth'), exportFees = document.getElementById('exportFees'), resetAllAbsent = document.getElementById('resetAllAbsent');
+
+const adminModal = document.getElementById('adminModal'), closeAdminModal = document.getElementById('closeAdminModal');
+const adminNewPass = document.getElementById('adminNewPass'), changeAdminPassBtn = document.getElementById('changeAdminPassBtn');
+
+const newTrainerName = document.getElementById('newTrainerName'), newTrainerPass = document.getElementById('newTrainerPass'), addTrainerBtn = document.getElementById('addTrainerBtn');
+const trainersList = document.getElementById('trainersList');
+
+const deviceAssignSelect = document.getElementById('deviceAssignSelect'), assignDeviceBtn = document.getElementById('assignDeviceBtn'), clearDeviceBtn2 = document.getElementById('clearDeviceBtn2'), deviceAssignedText = document.getElementById('deviceAssignedText');
+
+const exportStudents = document.getElementById('exportStudents'), importStudents = document.getElementById('importStudents'), clearStudents = document.getElementById('clearStudents');
+
+/* ----------------- INIT UI ----------------- */
+function initUI(){
+  adminObj = lsGet(KEY_ADMIN, null);
+  trainersObj = lsGet(KEY_TRAINERS, {});
+  // if admin not set, show admin setup, else show login
+  if(!adminObj){
+    adminSetup.style.display = 'block';
+    loginView.style.display = 'none';
+  } else {
+    adminSetup.style.display = 'none';
+    loginView.style.display = 'block';
+  }
+  populateTrainerOptions();
 }
-function populateTrainers(){
-  trainerList.innerHTML = '';
-  trainers.forEach(t => {
-    const opt = document.createElement('option'); opt.value = t; opt.text = t; trainerList.appendChild(opt);
+function populateTrainerOptions(){
+  // login trainer list & device assign & class select
+  loginTrainer.innerHTML = '';
+  classSelect.innerHTML = '';
+  deviceAssignSelect.innerHTML = '';
+  trainersList.innerHTML = '';
+  const names = Object.keys(trainersObj);
+  names.forEach(n=>{
+    const o=document.createElement('option'); o.value=n; o.textContent=n; loginTrainer.appendChild(o);
+    const o2=document.createElement('option'); o2.value=n; o2.textContent=n; classSelect.appendChild(o2);
+    const o3=document.createElement('option'); o3.value=n; o3.textContent=n; deviceAssignSelect.appendChild(o3);
+    const trDiv = document.createElement('div'); trDiv.style.display='flex'; trDiv.style.gap='8px'; trDiv.style.alignItems='center';
+    trDiv.innerHTML = `<div style="flex:1">${n}</div>`;
+    const passBtn = document.createElement('button'); passBtn.className='btn ghost'; passBtn.textContent='Change Password';
+    passBtn.onclick = ()=> changeTrainerPasswordPrompt(n);
+    const delBtn = document.createElement('button'); delBtn.className='btn warn'; delBtn.textContent='Delete';
+    delBtn.onclick = ()=> { if(confirm('Delete trainer '+n+'?')){ delete trainersObj[n]; lsSet(KEY_TRAINERS, trainersObj); populateTrainerOptions(); } };
+    trDiv.appendChild(passBtn); trDiv.appendChild(delBtn);
+    trainersList.appendChild(trDiv);
   });
+  // set currentTrainer default
+  if(names.length>0 && !currentTrainer) currentTrainer = names[0];
+  classSelect.value = currentTrainer || (names[0]||'');
+  className.textContent = currentTrainer || '';
+  classNameText.textContent = currentTrainer || '';
+  refreshDeviceAssignedText();
 }
-function saveTrainers(){ lsSet(KEY_TRAINERS, trainers); populateTrainers(); }
 
-// students
-function keyStudents(tr){ return PREFIX_STU + encodeURIComponent(tr); }
-function keyAttendance(tr, date){ return PREFIX_ATT + encodeURIComponent(tr) + '_' + date; }
+/* ----------------- ADMIN CREATION ----------------- */
+createAdminBtn.addEventListener('click', ()=>{
+  const p = firstAdminPass.value.trim(), pc = firstAdminPassConfirm.value.trim();
+  if(!p || p.length < 4) return alert('Admin password should be 4 or more chars.');
+  if(p !== pc) return alert('Passwords do not match');
+  adminObj = {hash: hashStr(p)};
+  lsSet(KEY_ADMIN, adminObj);
+  alert('Admin created. Please login as Admin.');
+  firstAdminPass.value = firstAdminPassConfirm.value = '';
+  initUI();
+});
+
+/* ----------------- LOGIN ----------------- */
+doLoginBtn.addEventListener('click', ()=>{
+  const mode = loginMode.value;
+  const pass = loginPassword.value || '';
+  if(mode === 'admin'){
+    if(!adminObj) return alert('Admin not set');
+    if(hashStr(pass) === adminObj.hash){
+      // login as admin
+      currentUser = 'ADMIN'; currentRole = 'admin';
+      showApp();
+    } else return alert('Wrong admin password');
+  } else {
+    const trainer = loginTrainer.value;
+    if(!trainer || !trainersObj[trainer]) return alert('Select trainer');
+    if(!trainersObj[trainer].passHash) return alert('Trainer does not have a password set (ask Admin)');
+    if(hashStr(pass) === trainersObj[trainer].passHash){
+      currentUser = trainer; currentRole = 'trainer';
+      currentTrainer = trainer;
+      showApp();
+    } else return alert('Wrong trainer password');
+  }
+});
+
+/* ----------------- SHOW APP / LOGOUT ----------------- */
+function showApp(){
+  loginArea.style.display='none';
+  appArea.style.display='';
+  currentUserText.textContent = currentUser;
+  currentRoleText.textContent = currentRole;
+  // admin can open admin panel
+  openAdminPanel.style.display = (currentRole === 'admin') ? '' : 'none';
+  // set class views
+  populateTrainerOptions();
+  setActiveTrainer(currentTrainer);
+}
+logoutBtn.addEventListener('click', ()=>{
+  location.reload();
+});
+
+/* ----------------- ADMIN PANEL ----------------- */
+openAdminPanel.addEventListener('click', ()=> { adminModal.style.display='flex'; });
+closeAdminModal.addEventListener('click', ()=> { adminModal.style.display='none'; });
+
+changeAdminPassBtn.addEventListener('click', ()=>{
+  const p = adminNewPass.value.trim();
+  if(!p || p.length < 4) return alert('Admin password min 4 chars');
+  adminObj = {hash: hashStr(p)}; lsSet(KEY_ADMIN, adminObj);
+  adminNewPass.value=''; alert('Admin password updated');
+});
+
+addTrainerBtn.addEventListener('click', ()=>{
+  const name = newTrainerName.value.trim();
+  const pass = newTrainerPass.value.trim();
+  if(!name) return alert('Enter trainer name');
+  if(trainersObj[name]) return alert('Trainer exists');
+  trainersObj[name] = { passHash: pass ? hashStr(pass) : null };
+  lsSet(KEY_TRAINERS, trainersObj);
+  newTrainerName.value=''; newTrainerPass.value='';
+  populateTrainerOptions();
+  alert('Trainer added. Set password for trainer or ask trainer to login (needs password).');
+});
+
+function changeTrainerPasswordPrompt(name){
+  const np = prompt('Enter new password for '+name+' (leave empty to cancel)');
+  if(!np) return;
+  trainersObj[name].passHash = hashStr(np);
+  lsSet(KEY_TRAINERS, trainersObj);
+  alert('Password updated for '+name);
+}
+
+/* ----------------- Device assignment ----------------- */
+function deviceId(){ return navigator.userAgent + '|' + (screen.width||0) + 'x' + (screen.height||0); }
+assignDeviceBtn.addEventListener('click', ()=>{
+  const t = deviceAssignSelect.value;
+  if(!t) return alert('Choose trainer');
+  let devObj = lsGet(KEY_DEVICE, {});
+  devObj[deviceId()] = t;
+  lsSet(KEY_DEVICE, devObj);
+  refreshDeviceAssignedText();
+  alert('This device assigned to '+t);
+});
+clearDeviceBtn2.addEventListener('click', ()=> {
+  if(!confirm('Clear device assignment on this device?')) return;
+  let devObj = lsGet(KEY_DEVICE, {});
+  delete devObj[deviceId()];
+  lsSet(KEY_DEVICE, devObj);
+  refreshDeviceAssignedText();
+  alert('Device cleared');
+});
+function refreshDeviceAssignedText(){
+  const devObj = lsGet(KEY_DEVICE, {});
+  const assigned = devObj[deviceId()];
+  deviceAssignedText.textContent = assigned ? 'This device assigned to: ' + assigned : 'Not assigned';
+}
+
+/* ----------------- CLASS / TRAINER selection ----------------- */
+document.getElementById('refreshClassBtn').addEventListener('click', ()=> populateTrainerOptions());
+classSelect.addEventListener('change', ()=> { setActiveTrainer(classSelect.value); });
+
+function setActiveTrainer(t){
+  if(!t) return;
+  currentTrainer = t;
+  className.textContent = t;
+  classNameText.textContent = t;
+  loadStudents();
+  loadAttendance();
+  checkDeviceLock();
+}
+
+/* ----------------- STUDENT CRUD ----------------- */
+function studentsKey(tr){ return KEY_STUDENTS_PREFIX + encodeURIComponent(tr); }
+function attKey(tr, date){ return KEY_ATT_PREFIX + encodeURIComponent(tr) + '_' + date; }
+
 function loadStudents(){
-  students = lsGet(keyStudents(currentTrainer), []);
-  renderStudentList();
+  students = lsGet(studentsKey(currentTrainer), []);
+  renderStudents();
 }
-function saveStudents(){ lsSet(keyStudents(currentTrainer), students); renderStudentList(); }
+function saveStudents(){ lsSet(studentsKey(currentTrainer), students); renderStudents(); }
 
-// render
-function renderStudentList(){
-  savedStudents.innerHTML = ''; qrSelect.innerHTML=''; studentCount.textContent = students.length + ' students';
+function renderStudents(){
+  studentsList.innerHTML=''; qrSelect.innerHTML='';
+  studentCount.textContent = students.length + ' students';
   students.forEach((s,i)=>{
     const el = document.createElement('div'); el.className='student';
-    const name = document.createElement('div'); name.className='name'; name.textContent = s.name + (s.reg||'');
-    name.onclick = ()=> editStudent(i);
-    const meta = document.createElement('div'); meta.className='roll'; meta.textContent = `Reg: ${s.reg || ''} • ${s.phone || ''}`;
+    const nm = document.createElement('div'); nm.className='name'; nm.textContent = s.name;
+    const r = document.createElement('div'); r.className='roll'; r.textContent = `Reg: ${s.reg || ''} • ${s.level || ''}`;
+    const meta = document.createElement('div'); meta.className='smallmuted'; meta.textContent = `DOB:${s.dob||'-'} | Father:${s.father||'-'} | Phone:${s.phone||'-'} | Belt:${s.belt||'-'} | Aadhaar:${s.aadhaar||'-'} | Fee:${s.fee||0}`;
     const row = document.createElement('div'); row.style.display='flex'; row.style.gap='6px';
-    const qr = document.createElement('button'); qr.className='btn ghost'; qr.textContent='QR'; qr.onclick = ()=> genQRFor(s);
+    const edit = document.createElement('button'); edit.className='btn ghost'; edit.textContent='Edit'; edit.onclick = ()=> startEditStudent(i);
+    const qrbtn = document.createElement('button'); qrbtn.className='btn'; qrbtn.textContent='QR'; qrbtn.onclick = ()=> genQRFor(s);
     const del = document.createElement('button'); del.className='btn warn'; del.textContent='Delete'; del.onclick = ()=> { if(confirm('Delete '+s.name+'?')){ students.splice(i,1); saveStudents(); loadAttendance(); } };
-    row.appendChild(qr); row.appendChild(del);
-    el.appendChild(name); el.appendChild(meta); el.appendChild(row);
-    savedStudents.appendChild(el);
-
-    const o = document.createElement('option'); o.value = s.reg || ('i'+i); o.textContent = (s.reg? s.reg+' • ':'') + s.name;
-    qrSelect.appendChild(o);
+    row.appendChild(edit); row.appendChild(qrbtn); row.appendChild(del);
+    el.appendChild(nm); el.appendChild(r); el.appendChild(meta); el.appendChild(row);
+    studentsList.appendChild(el);
+    const o = document.createElement('option'); o.value = s.reg || ('i'+i); o.textContent = (s.reg? s.reg+' • ':'') + s.name; qrSelect.appendChild(o);
   });
   renderAttendanceGrid();
 }
 
-// add / edit
-function addOrUpdateStudent(){
-  const obj = {
-    reg: regNo.value.trim() || nextReg(),
-    name: stuName.value.trim() || 'Unknown',
-    dob: dob.value.trim(),
-    father: father.value.trim(),
-    phone: phone.value.trim(),
-    belt: belt.value.trim(),
-    aadhaar: aadhaar.value.trim(),
-    level: level.value,
-    fee: Number(fee.value) || 0
-  };
-  // if reg already exists, update
-  const idx = students.findIndex(s=> s.reg === obj.reg);
-  if(idx>=0) { students[idx] = obj; }
-  else students.push(obj);
-  saveStudents();
-  clearForm();
-  alert('Student saved.');
-}
-function clearForm(){ regNo.value=''; stuName.value=''; dob.value=''; father.value=''; phone.value=''; belt.value=''; aadhaar.value=''; level.value='Beginner'; fee.value=''; }
-function editStudent(i){
+function startEditStudent(i){
   const s = students[i];
   regNo.value = s.reg || '';
   stuName.value = s.name || '';
-  dob.value = s.dob || '';
-  father.value = s.father || '';
-  phone.value = s.phone || '';
-  belt.value = s.belt || '';
-  aadhaar.value = s.aadhaar || '';
-  level.value = s.level || 'Beginner';
-  fee.value = s.fee || '';
+  stuDob.value = s.dob || '';
+  stuFather.value = s.father || '';
+  stuPhone.value = s.phone || '';
+  stuBelt.value = s.belt || '';
+  stuAadhaar.value = s.aadhaar || '';
+  stuLevel.value = s.level || 'Beginner';
+  stuFee.value = s.fee || '';
+  editingIndex = i;
+  updateStudentBtn.style.display = '';
+  addStudentBtn.style.display = 'none';
 }
 
-// simple registration generator
-function nextReg(){
-  let max = 0;
-  students.forEach(s=>{ const m = parseInt((s.reg||'').replace(/\D/g,'')) || 0; if(m>max) max=m; });
-  return 'R' + String(max+1).padStart(3,'0');
+addStudentBtn.addEventListener('click', ()=>{
+  const obj = {
+    reg: regNo.value.trim() || generateReg(),
+    name: stuName.value.trim() || 'Unknown',
+    dob: stuDob.value || '',
+    father: stuFather.value.trim() || '',
+    phone: stuPhone.value.trim() || '',
+    belt: stuBelt.value.trim() || '',
+    aadhaar: stuAadhaar.value.trim() || '',
+    level: stuLevel.value,
+    fee: Number(stuFee.value) || 0
+  };
+  if(!obj.name) return alert('Enter name');
+  if(students.find(x=>x.reg === obj.reg)) return alert('Reg no exists. Use edit.');
+  students.push(obj); saveStudents(); clearForm(); alert('Student added.');
+});
+
+updateStudentBtn.addEventListener('click', ()=>{
+  if(editingIndex < 0) return;
+  const s = students[editingIndex];
+  s.reg = regNo.value.trim(); s.name = stuName.value.trim(); s.dob = stuDob.value || ''; s.father = stuFather.value.trim();
+  s.phone = stuPhone.value.trim(); s.belt = stuBelt.value.trim(); s.aadhaar = stuAadhaar.value.trim(); s.level = stuLevel.value; s.fee = Number(stuFee.value) || 0;
+  saveStudents(); clearForm(); alert('Updated');
+});
+
+clearFormBtn.addEventListener('click', clearForm);
+function clearForm(){ regNo.value=''; stuName.value=''; stuDob.value=''; stuFather.value=''; stuPhone.value=''; stuBelt.value=''; stuAadhaar.value=''; stuLevel.value='Beginner'; stuFee.value=''; editingIndex=-1; updateStudentBtn.style.display='none'; addStudentBtn.style.display=''; }
+
+/* ----------------- Reg generator ----------------- */
+function generateReg(){
+  let max=0; students.forEach(s=>{ const n = parseInt((s.reg||'').replace(/\D/g,'')) || 0; if(n>max) max=n; }); return 'R'+String(max+1).padStart(3,'0');
 }
 
-// attendance
+/* ----------------- Attendance ----------------- */
 function loadAttendance(){
-  attendance = lsGet(keyAttendance(currentTrainer, nowDate()), {});
+  attendance = lsGet(attKey(currentTrainer, nowDate()), {});
   renderAttendanceGrid();
 }
-function saveAttendance(){ lsSet(keyAttendance(currentTrainer, nowDate()), attendance); showMarkedCount(); }
+function saveAttendance(){ lsSet(attKey(currentTrainer, nowDate()), attendance); renderAttendanceGrid(); }
+
 function renderAttendanceGrid(){
-  attendanceGrid.innerHTML = '';
+  attendanceGrid.innerHTML=''; dateText.textContent = new Date().toLocaleString();
   students.forEach((s,i)=>{
     const key = s.reg || ('i'+i);
     const st = attendance[key] || 'absent';
     const c = document.createElement('div'); c.className='student';
     const n = document.createElement('div'); n.className='name'; n.textContent = s.name;
-    const r = document.createElement('div'); r.className='roll'; r.textContent = `${s.reg || ''} • ${s.level || ''}`;
+    const r = document.createElement('div'); r.className='roll'; r.textContent = s.reg + (s.level? ' • '+s.level : '');
     const stRow = document.createElement('div'); stRow.className='status-row';
     const b1 = document.createElement('button'); b1.className='sbtn present'; b1.textContent='Present';
     const b2 = document.createElement('button'); b2.className='sbtn absent'; b2.textContent='Absent';
     const b3 = document.createElement('button'); b3.className='sbtn late'; b3.textContent='Late';
-    [b1,b2,b3].forEach(btn=> btn.style.opacity = '0.6');
+    [b1,b2,b3].forEach(btn=> btn.style.opacity='0.6');
     if(st==='present') b1.style.opacity='1';
     if(st==='absent') b2.style.opacity='1';
     if(st==='late') b3.style.opacity='1';
-    b1.onclick = ()=>{ attendance[key] = 'present'; saveAttendance(); renderAttendanceGrid(); };
-    b2.onclick = ()=>{ attendance[key] = 'absent'; saveAttendance(); renderAttendanceGrid(); };
-    b3.onclick = ()=>{ attendance[key] = 'late'; saveAttendance(); renderAttendanceGrid(); };
+    b1.onclick = ()=>{ attendance[key]='present'; saveAttendance(); renderAttendanceGrid(); };
+    b2.onclick = ()=>{ attendance[key]='absent'; saveAttendance(); renderAttendanceGrid(); };
+    b3.onclick = ()=>{ attendance[key]='late'; saveAttendance(); renderAttendanceGrid(); };
     stRow.appendChild(b1); stRow.appendChild(b2); stRow.appendChild(b3);
     c.appendChild(n); c.appendChild(r); c.appendChild(stRow);
     attendanceGrid.appendChild(c);
   });
-  showMarkedCount();
-}
-function showMarkedCount(){ const total = students.length; const marked = Object.keys(attendance).length; markedCount.textContent = `${marked} marked / ${total} total`; }
-
-// export CSVs
-function exportTodayCSV(){
-  const rows = ['trainer,date,reg,name,status'];
-  students.forEach((s,i)=>{
-    const key = s.reg || ('i'+i);
-    const st = attendance[key] || 'absent';
-    rows.push([currentTrainer, new Date().toISOString(), s.reg, `"${s.name.replace(/"/g,'""')}"`, st].join(','));
-  });
-  download(rows.join('\\n'), `${currentTrainer}_attendance_${nowDate()}.csv`);
-}
-function exportMonthlyCSV(){
-  const now = new Date(); const year = now.getFullYear(); const month = now.getMonth()+1;
-  const rows = ['reg,name,present,absent,late,total,percent'];
-  students.forEach((s,i)=>{
-    const key = s.reg || ('i'+i);
-    let present=0, absent=0, late=0, total=0;
-    const days = new Date(year, month, 0).getDate();
-    for(let d=1; d<=days; d++){
-      const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const dayAtt = lsGet(keyAttendance(currentTrainer, dateStr), {});
-      const st = dayAtt[key];
-      if(st){ total++; if(st==='present') present++; else if(st==='absent') absent++; else if(st==='late') late++; }
-    }
-    const pct = total? Math.round((present/total)*100) : 0;
-    rows.push([s.reg, `"${s.name.replace(/"/g,'""')}"`, present, absent, late, total, pct].join(','));
-  });
-  download(rows.join('\\n'), `${currentTrainer}_monthly_${year}_${String(month).padStart(2,'0')}.csv`);
-}
-function exportMonthlyFeesCSV(){
-  const now = new Date(); const year = now.getFullYear(); const month = now.getMonth()+1;
-  const rows = ['reg,name,monthly_fee'];
-  students.forEach(s=>{
-    rows.push([s.reg, `"${s.name.replace(/"/g,'""')}"`, s.fee || 0].join(','));
-  });
-  download(rows.join('\\n'), `${currentTrainer}_fees_${year}_${String(month).padStart(2,'0')}.csv`);
+  const total = students.length; const marked = Object.keys(attendance).length;
+  todayCount.textContent = `${marked} marked / ${total} total`;
 }
 
-// QR gen/scan
+/* ----------------- QR generate/scan ----------------- */
 async function genQRFor(s){
-  const data = `sf:${currentTrainer}:${s.reg || ''}`;
+  const data = `sf:${currentTrainer}:${s.reg||''}`;
   try{
     const url = await QRCode.toDataURL(data, {width:300});
-    qrPreview.innerHTML = '';
-    const img = document.createElement('img'); img.src = url; img.alt='qr';
-    const a = document.createElement('a'); a.href = url; a.download = `${(s.reg||s.name)}_qr.png`; a.className='btn'; a.textContent='Download';
-    qrPreview.appendChild(img); qrPreview.appendChild(document.createElement('br')); qrPreview.appendChild(a);
+    qrPreview.innerHTML=''; const img=document.createElement('img'); img.src=url; img.style.maxWidth='150px';
+    const dl=document.createElement('a'); dl.href=url; dl.download = `${s.reg||s.name}_qr.png`; dl.textContent='Download'; dl.className='btn ghost'; dl.style.display='inline-block'; dl.style.marginLeft='8px';
+    qrPreview.appendChild(img); qrPreview.appendChild(dl);
   }catch(e){ alert('QR error'); }
 }
-genQR.addEventListener('click', ()=>{
-  const idx = qrSelect.selectedIndex;
-  if(idx<0) return alert('Select student');
-  const s = students[idx];
-  genQRFor(s);
+genQR.addEventListener('click', ()=> {
+  const idx = qrSelect.selectedIndex; if(idx<0) return alert('Select student'); const s = students[idx]; genQRFor(s);
 });
 
-// scanning using camera
-let scanning = false; let videoStream = null;
+// Scan using camera
+let scanning=false, videoStream=null;
 scanQR.addEventListener('click', async ()=>{
   if(scanning){ stopScan(); return; }
-  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return alert('Camera not supported.');
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return alert('Camera not supported');
   const video = document.createElement('video'); video.setAttribute('playsinline','true'); video.style.width='100%';
-  qrPreview.innerHTML = ''; qrPreview.appendChild(video);
-  scanning = true; scanQR.textContent = 'Stop Scan';
+  qrPreview.innerHTML=''; qrPreview.appendChild(video);
+  scanning=true; scanQR.textContent='Stop Scan';
   try{
     const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
     video.srcObject = stream; video.play(); videoStream = stream;
     const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
     const tick = ()=>{
       if(video.readyState === video.HAVE_ENOUGH_DATA){
-        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-        ctx.drawImage(video,0,0,canvas.width,canvas.height);
-        try{
-          const imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
-          const code = jsQR(imgData.data, imgData.width, imgData.height);
-          if(code){
-            const data = code.data; stopScan(); processQR(data); return;
-          }
-        }catch(e){}
+        canvas.width = video.videoWidth; canvas.height=video.videoHeight; ctx.drawImage(video,0,0,canvas.width,canvas.height);
+        try{ const imgData = ctx.getImageData(0,0,canvas.width,canvas.height); const code = jsQR(imgData.data,imgData.width,imgData.height); if(code){ stopScan(); processQR(code.data); return; } }catch(e){}
       }
       if(scanning) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
-  }catch(e){ scanning=false; scanQR.textContent='Scan'; alert('Camera error or permission denied'); }
+  }catch(e){ scanning=false; scanQR.textContent='Scan'; alert('Camera error / permission denied'); }
 });
 function stopScan(){ scanning=false; scanQR.textContent='Scan'; if(videoStream){ videoStream.getTracks().forEach(t=>t.stop()); videoStream=null; } qrPreview.innerHTML=''; }
-
 function processQR(data){
   if(!data.startsWith('sf:')) return alert('Unknown QR');
-  const parts = data.split(':'); const cls = parts[1] || currentTrainer; const reg = parts[2] || '';
+  const parts = data.split(':'); const cls = parts[1]||currentTrainer; const reg = parts[2]||'';
   if(cls !== currentTrainer){
-    if(!confirm(`QR is for class "${cls}". Switch and mark?`)) return;
-    setTrainer(cls);
+    if(!confirm(`QR is for ${cls}. Switch and mark?`)) return;
+    setActiveTrainer(cls);
   }
-  const idx = students.findIndex(s=> s.reg === reg);
+  const idx = students.findIndex(s=>s.reg === reg);
   if(idx>=0){ attendance[reg] = 'present'; saveAttendance(); renderAttendanceGrid(); alert(students[idx].name + ' marked Present.'); }
-  else alert('Student not found: ' + reg);
+  else alert('Student not found: '+reg);
 }
 
-// device assignment (no PIN)
-function deviceId(){ return navigator.userAgent + '|' + (screen.width || 0) + 'x' + (screen.height||0); }
-function assignDevice(){
-  deviceAssign = lsGet(KEY_DEVICE, {});
-  deviceAssign[deviceId()] = currentTrainer;
-  lsSet(KEY_DEVICE, deviceAssign);
-  alert('Device assigned to ' + currentTrainer);
-}
-function clearDevice(){
-  deviceAssign = lsGet(KEY_DEVICE, {});
-  delete deviceAssign[deviceId()];
-  lsSet(KEY_DEVICE, deviceAssign);
-  alert('Device cleared');
-}
-function checkDeviceLock(){
-  deviceAssign = lsGet(KEY_DEVICE, {});
-  const assigned = deviceAssign[deviceId()];
-  if(assigned && assigned !== currentTrainer){
-    // lock UI switching - we force currentTrainer to assigned
-    alert('This device is assigned to "'+assigned+'". Switching back to that trainer.');
-    setTrainer(assigned);
-  }
-}
-
-// trainer set
-function setTrainer(t){
-  if(!t) return;
-  currentTrainer = t;
-  currentTrainerText.textContent = currentTrainer;
-  trainerInput.value = '';
-  // ensure trainer in list
-  if(!trainers.includes(t)){ trainers.push(t); saveTrainers(); }
-  loadStudents();
-  loadAttendance();
-  checkDeviceLock();
-}
-setTrainerBtn.addEventListener('click', ()=> {
-  const v = trainerInput.value.trim(); if(!v) return alert('Type trainer name'); setTrainer(v);
-});
-addTrainerBtn.addEventListener('click', ()=>{
-  const v = trainerInput.value.trim(); if(!v) return alert('Type trainer name'); if(!trainers.includes(v)) { trainers.push(v); saveTrainers(); alert('Trainer added'); }
-  trainerInput.value='';
-});
-trainerList.addEventListener('change', ()=> {
-  const v = trainerList.value; if(v) setTrainer(v);
+/* ----------------- Export / Reports ----------------- */
+exportToday.addEventListener('click', ()=>{
+  const rows = ['trainer,date,reg,name,status'];
+  students.forEach(s=> rows.push([currentTrainer, new Date().toISOString(), s.reg, `"${s.name.replace(/"/g,'""')}"`, attendance[s.reg]||'absent'].join(',')));
+  downloadCSV(rows.join('\\n'), `${currentTrainer}_attendance_${nowDate()}.csv`);
 });
 
-// save/load
-addStudentBtn.addEventListener('click', addOrUpdateStudent);
-exportStudentsBtn.addEventListener('click', ()=>{
-  if(students.length===0) return alert('No students');
-  const rows = ['reg,name,dob,father,phone,belt,aadhaar,level,fee'];
-  students.forEach(s=> rows.push([s.reg, `"${s.name.replace(/"/g,'""')}"`, s.dob || '', `"${(s.father||'').replace(/"/g,'""')}"`, s.phone || '', s.belt || '', s.aadhaar || '', s.level || '', s.fee || 0].join(',')));
-  download(rows.join('\\n'), `${currentTrainer}_students.csv`);
+exportMonth.addEventListener('click', ()=>{
+  const now = new Date(); const year = now.getFullYear(); const month = now.getMonth()+1;
+  const rows = ['reg,name,present,absent,late,total,percent'];
+  students.forEach(s=>{
+    let present=0,absent=0,late=0,total=0;
+    const days = new Date(year, month, 0).getDate();
+    for(let d=1; d<=days; d++){
+      const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const dayAtt = lsGet(attKey(currentTrainer, dateStr), {});
+      const st = dayAtt[s.reg];
+      if(st){ total++; if(st==='present') present++; else if(st==='absent') absent++; else if(st==='late') late++; }
+    }
+    const pct = total? Math.round((present/total)*100) : 0;
+    rows.push([s.reg, `"${s.name.replace(/"/g,'""')}"`, present, absent, late, total, pct].join(','));
+  });
+  downloadCSV(rows.join('\\n'), `${currentTrainer}_monthly_${nowDate()}.csv`);
 });
-clearStudentsBtn.addEventListener('click', ()=> { if(!confirm('Delete all students for this trainer?')) return; students=[]; saveStudents(); loadAttendance(); });
 
-importBtn.addEventListener('click', ()=>{
-  const input = document.createElement('input'); input.type='file'; input.accept='.csv,text/csv';
-  input.onchange = e => {
+exportFees.addEventListener('click', ()=>{
+  const rows = ['reg,name,monthly_fee'];
+  students.forEach(s=> rows.push([s.reg, `"${s.name.replace(/"/g,'""')}"`, s.fee||0].join(',')));
+  downloadCSV(rows.join('\\n'), `${currentTrainer}_fees_${nowDate()}.csv`);
+});
+
+/* ----------------- Save / Reset actions ----------------- */
+saveToday.addEventListener('click', ()=> { saveAttendance(); alert('Saved today'); });
+resetAllAbsent.addEventListener('click', ()=> {
+  if(!confirm('Set all to Absent for today?')) return;
+  attendance = {}; students.forEach(s=> attendance[s.reg || ('i'+students.indexOf(s))] = 'absent'); saveAttendance(); renderAttendanceGrid();
+});
+
+/* ----------------- Load/Save helpers ----------------- */
+function loadStudentsAndAttendance(){
+  loadStudents(); loadAttendance();
+}
+function loadAttendance(){ attendance = lsGet(attKey(currentTrainer, nowDate()), {}); renderAttendanceGrid(); }
+function saveStudentsToStore(){ lsSet(studentsKey(currentTrainer), students); renderStudents(); }
+
+/* ----------------- CSV Import/Export students ----------------- */
+importStudents.addEventListener('click', ()=>{
+  const input = document.createElement('input'); input.type='file'; input.accept='.csv';
+  input.onchange = e=>{
     const f = e.target.files[0]; if(!f) return;
-    const r = new FileReader(); r.onload = ev => {
-      const txt = ev.target.result; const lines = txt.split(/\\r?\\n/).map(l=>l.trim()).filter(Boolean);
-      // expect header or simple name,reg
-      lines.forEach((ln, idx) => {
-        if(idx===0 && ln.toLowerCase().includes('reg')) return; // skip header
-        const parts = ln.split(',').map(p=>p.trim().replace(/^"|"$/g,''));
-        const s = { reg: parts[0] || nextReg(), name: parts[1]||parts[0]||'Unknown', dob: parts[2]||'', father: parts[3]||'', phone: parts[4]||'', belt: parts[5]||'', aadhaar: parts[6]||'', level: parts[7]||'Beginner', fee: Number(parts[8]||0) };
-        if(s.name) students.push(s);
-      });
+    const r = new FileReader(); r.onload = ev=>{
+      const txt = ev.target.result; const lines = txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+      lines.forEach((ln,idx)=>{ if(idx===0 && ln.toLowerCase().includes('reg')) return; const parts = ln.split(',').map(p=>p.replace(/^"|"$/g,'').trim()); const s = { reg: parts[0]||generateReg(), name: parts[1]||parts[0]||'Unknown', dob: parts[2]||'', father: parts[3]||'', phone: parts[4]||'', belt: parts[5]||'', aadhaar: parts[6]||'', level: parts[7]||'Beginner', fee: Number(parts[8]||0) }; if(s.name) students.push(s); });
       saveStudents(); alert('Import complete');
     }; r.readAsText(f);
   };
   input.click();
 });
 
-// exports
-exportToday.addEventListener('click', exportTodayCSV);
-exportMonth.addEventListener('click', exportMonthlyCSV);
-exportFees.addEventListener('click', exportMonthlyFeesCSV);
-saveToday.addEventListener('click', ()=> { saveAttendance(); alert('Saved'); });
-resetBtn.addEventListener('click', ()=> {
-  if(!confirm('Set all to Absent for today?')) return;
-  attendance = {};
-  students.forEach((s,i)=> attendance[s.reg || ('i'+i)] = 'absent');
-  saveAttendance(); renderAttendanceGrid();
+exportStudents.addEventListener('click', ()=>{
+  if(students.length===0) return alert('No students'); const rows=['reg,name,dob,father,phone,belt,aadhaar,level,fee']; students.forEach(s=> rows.push([s.reg, `"${s.name.replace(/"/g,'""')}"`, s.dob||'', `"${(s.father||'').replace(/"/g,'""')}"`, s.phone||'', s.belt||'', s.aadhaar||'', s.level||'', s.fee||0].join(','))); downloadCSV(rows.join('\\n'), `${currentTrainer}_students.csv`);
 });
 
-// device assign
-assignDeviceBtn.addEventListener('click', assignDevice);
-clearDeviceBtn.addEventListener('click', clearDevice);
+clearStudents.addEventListener('click', ()=> { if(!confirm('Delete all students for this trainer?')) return; students=[]; saveStudents(); loadAttendance(); });
 
-// on load
-window.addEventListener('load', init);
-window.addEventListener('storage', ()=> { trainers = lsGet(KEY_TRAINERS, ['Default']); populateTrainers(); if(currentTrainer) loadStudents(); loadAttendance(); });
+/* ----------------- Device lock check ----------------- */
+function checkDeviceLock(){
+  const dev = lsGet(KEY_DEVICE, {}); const assigned = dev[deviceId()];
+  if(assigned && assigned !== currentTrainer){
+    alert('This device is assigned to "'+assigned+'". Switching to that trainer.');
+    setActiveTrainer(assigned);
+  }
+}
+
+/* ----------------- helpers on load ----------------- */
+function setActiveTrainer(t){ currentTrainer = t; className.textContent = t; classNameText.textContent = t; loadStudents(); loadAttendance(); refreshDeviceAssignedText(); }
+
+function renderStudents(){ renderStudents = renderStudentsInternal(); } // placeholder to satisfy earlier calls
+function renderStudentsInternal(){ /* will be replaced below */ }
+
+/* ensure initial load */
+initUI();
+
+/* override simple function placeholders (won't run twice) */
+function renderStudentsInternal(){ /* no-op - actual renderStudents defined earlier via renderStudents closure */ }
+
+/* Note: earlier functions declare renderStudents; ensure currentTrainer value */
+if(!currentTrainer){ const keys = Object.keys(trainersObj); currentTrainer = keys[0] || 'Default'; if(!trainersObj[currentTrainer]) { trainersObj[currentTrainer] = {passHash:null}; lsSet(KEY_TRAINERS, trainersObj); } populateTrainerOptions(); }
+
+/* finish init */
+setActiveTrainer(currentTrainer);
+loadStudents(); loadAttendance();
+refreshDeviceAssignedText();
 
 </script>
+</div>
 </body>
 </html>
