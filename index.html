@@ -3,12 +3,13 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Sang Fa — Attendance (Full)</title>
+<title>Sang Fa — Attendance (Complete)</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#f6f7fb; --card:#fff; --muted:#666; --accent:#0b6efd;
     --ok:#16a34a; --bad:#dc2626; --late:#f59e0b;
+    --shadow: 0 1px 6px rgba(12,18,30,.04);
   }
   *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
   body{margin:0;background:var(--bg);color:#111;padding:12px}
@@ -23,7 +24,7 @@
   .btn.ghost{background:#fff;color:var(--accent);border:1px solid #dbeafe}
   .btn.warn{background:var(--bad)}
   .layout{display:grid;grid-template-columns:1fr;gap:12px;max-width:1200px}
-  .card{background:var(--card);padding:12px;border-radius:10px;box-shadow:0 1px 6px rgba(12,18,30,.04)}
+  .card{background:var(--card);padding:12px;border-radius:10px;box-shadow:var(--shadow)}
   .student-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:10px}
   .student{padding:10px;border-radius:8px;border:1px solid #eef2ff;background:#fff;display:flex;flex-direction:column;gap:8px}
   .name{font-weight:600}
@@ -41,19 +42,29 @@
     .layout{grid-template-columns:420px 1fr}
     .controls{grid-template-columns:1fr auto}
   }
-  /* modal */
   .modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;padding:18px}
   .modal .card{max-width:720px;width:100%}
+  .trainer-buttons{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .trainer-buttons button{padding:8px 14px;border-radius:6px;border:none;color:#fff;cursor:pointer}
+  .btn-blue{background:#2563eb} .btn-green{background:#16a34a} .btn-amber{background:#d97706}
+  .hint{font-size:13px;color:#444}
 </style>
 </head>
 <body>
 
 <header>
   <div>
-    <h1>Sang Fa — Attendance (Full)</h1>
+    <h1>Sang Fa — Attendance (Complete)</h1>
     <div class="small">Auto-roll, monthly reports, QR scan & generate, cloud optional.</div>
   </div>
 </header>
+
+<!-- Quick trainer buttons -->
+<div class="trainer-buttons">
+  <button class="btn-blue" onclick="switchClass('Panita Gogoi')">Panita Gogoi</button>
+  <button class="btn-green" onclick="switchClass('Manash Pratim Chutia')">Manash Pratim Chutia</button>
+  <button class="btn-amber" onclick="switchClass('Madhujya Chutia')">Madhujya Chutia</button>
+</div>
 
 <div class="top">
   <div class="controls">
@@ -72,7 +83,7 @@
 </div>
 
 <div class="layout">
-  <!-- left: manage / import -->
+  <!-- LEFT -->
   <div class="card" id="leftCard">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div><strong>Students — (auto roll numbers)</strong><div class="smallmuted">Add once — saved locally or to cloud</div></div>
@@ -105,10 +116,9 @@
       <div id="qrPreview" style="margin-top:8px"></div>
       <div id="scannerArea" style="margin-top:8px"></div>
     </div>
-
   </div>
 
-  <!-- right: attendance -->
+  <!-- RIGHT -->
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
       <div>
@@ -136,7 +146,7 @@
   </div>
 </div>
 
-<!-- modal for admin -->
+<!-- Admin Modal -->
 <div id="modal" class="modal"><div class="card">
   <div style="display:flex;justify-content:space-between;align-items:center">
     <strong>Admin Panel</strong>
@@ -163,30 +173,25 @@
   </div>
 </div></div>
 
-<!-- include jsQR for scanning -->
+<!-- libs -->
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<!-- include qrcode library for generation -->
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <script>
 /*
-  Full client-side attendance app with optional Firebase sync.
-  - All data saved under localStorage keys scoped by classroom & date.
-  - Firebase: optional; if config present and connect clicked, will sync students and today's attendance (two-way).
+ Complete JS for full app (students, attendance, QR, month report, firebase optional, admin pin).
 */
 
-/* ------------------ CONFIG / KEYS ------------------ */
-const APP_PREFIX = 'sangfa_full_v1';
-const LS_KEY_CONFIG = APP_PREFIX + '_config'; // stores firebase config + admin pin
-const LS_KEY_STUDENTS_PREFIX = APP_PREFIX + '_students_'; // + class
-const LS_KEY_ATT_PREFIX = APP_PREFIX + '_att_'; // + class + date
+const APP_PREFIX = 'sangfa_full_v2';
+const LS_KEY_CONFIG = APP_PREFIX + '_config';
+const LS_KEY_STUDENTS_PREFIX = APP_PREFIX + '_students_';
+const LS_KEY_ATT_PREFIX = APP_PREFIX + '_att_';
 const LS_KEY_CLASSES = APP_PREFIX + '_classes';
 
-// optional firebase objects (populated if configured & connected)
 let firebaseApp = null;
 let firestore = null;
 
-/* --------------- DOM elements ------------------ */
+/* DOM */
 const pasteArea = document.getElementById('pasteArea');
 const pasteAddBtn = document.getElementById('pasteAddBtn');
 const savedList = document.getElementById('savedList');
@@ -203,10 +208,8 @@ const exportBtn = document.getElementById('exportBtn');
 const exportDayBtn = document.getElementById('exportDayBtn');
 const monthlyReportBtn = document.getElementById('monthlyReportBtn');
 const monthlyCSVBtn = document.getElementById('monthlyCSVBtn');
-const clearTodayBtn = document.getElementById('clearListBtn');
 const saveBtn = document.getElementById('saveBtn');
 const resetStatuses = document.getElementById('resetStatuses');
-const addSelectedBtn = document.getElementById('addSelectedBtn');
 const qrStudentSelect = document.getElementById('qrStudentSelect');
 const genQRBtn = document.getElementById('genQRBtn');
 const qrPreview = document.getElementById('qrPreview');
@@ -223,60 +226,31 @@ const connectFirebaseBtn = document.getElementById('connectFirebaseBtn');
 const firebaseStatus = document.getElementById('firebaseStatus');
 const syncBtn = document.getElementById('syncBtn');
 
-/* ------------------ STATE ------------------ */
-let currentClass = localStorage.getItem(LS_KEY_CLASSES) ? JSON.parse(localStorage.getItem(LS_KEY_CLASSES))[0] : 'Default';
-let students = []; // array of {name, roll}
-let attendance = {}; // key -> status for today
-let config = loadConfig(); // {adminPinHash, firebaseConfig}
-let classes = loadClasses();
+/* State */
+let classes = loadJSON(LS_KEY_CLASSES, ['Default']);
+let currentClass = classes[0] || 'Default';
+let students = []; // {name, roll}
+let attendance = {}; // {key: status}
+let config = loadJSON(LS_KEY_CONFIG, {adminPinHash:null, firebaseConfig:null});
 
-/* ------------------ UTIL ------------------ */
+/* Helpers */
+function loadJSON(k, def=null){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):def; }catch(e){ return def; } }
+function saveJSON(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
 function todayStr(d=new Date()){ return d.toISOString().slice(0,10); }
 function studentsKeyFor(cls){ return LS_KEY_STUDENTS_PREFIX + cls; }
 function attKeyFor(cls, dateStr){ return LS_KEY_ATT_PREFIX + cls + '_' + dateStr; }
-function loadJSON(k, def=null){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):def;}catch(e){return def;} }
-function saveJSON(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
 
-/* ------------------ CONFIG / ADMIN ------------------ */
-function loadConfig(){
-  return loadJSON(LS_KEY_CONFIG, {adminPinHash: null, firebaseConfig: null});
-}
-function saveConfig(){
-  saveJSON(LS_KEY_CONFIG, config);
-}
+/* Load & Save */
+function loadClasses(){ classes = loadJSON(LS_KEY_CLASSES, ['Default']); if(!classes.includes(currentClass)) classes.unshift(currentClass); }
+function saveClasses(){ saveJSON(LS_KEY_CLASSES, classes); }
 
-/* ------------------ CLASSES ------------------ */
-function loadClasses(){
-  const arr = loadJSON(LS_KEY_CLASSES, ['Default']);
-  if(arr.length === 0) arr.push('Default');
-  if(!arr.includes(currentClass)) arr.unshift(currentClass);
-  return arr;
-}
-function saveClasses(){
-  saveJSON(LS_KEY_CLASSES, classes);
-}
+function loadStudents(){ students = loadJSON(studentsKeyFor(currentClass), []); renderSavedList(); }
+function saveStudents(){ saveJSON(studentsKeyFor(currentClass), students); renderSavedList(); }
 
-/* ------------------ STUDENTS (local) ------------------ */
-function loadStudents(){
-  students = loadJSON(studentsKeyFor(currentClass), []);
-  renderSavedList();
-}
-function saveStudents(){
-  saveJSON(studentsKeyFor(currentClass), students);
-  renderSavedList();
-}
+function loadAttendance(){ attendance = loadJSON(attKeyFor(currentClass, todayStr()), {}); renderAttendanceGrid(); }
+function saveAttendance(){ saveJSON(attKeyFor(currentClass, todayStr()), attendance); showCounts(); }
 
-/* ------------------ ATTENDANCE (local) ------------------ */
-function loadAttendance(){
-  attendance = loadJSON(attKeyFor(currentClass, todayStr()), {});
-  renderAttendanceGrid();
-}
-function saveAttendance(){
-  saveJSON(attKeyFor(currentClass, todayStr()), attendance);
-  showCounts();
-}
-
-/* ------------------ render functions ------------------ */
+/* UI Render */
 function renderSavedList(){
   savedList.innerHTML=''; qrStudentSelect.innerHTML='';
   countStudents.textContent = students.length + ' students';
@@ -286,7 +260,7 @@ function renderSavedList(){
     const rl = document.createElement('div'); rl.className='roll'; rl.textContent = 'Roll: ' + (s.roll || '');
     const row = document.createElement('div'); row.style.display='flex'; row.style.gap='6px';
     const up = document.createElement('button'); up.className='btn ghost'; up.textContent='Edit';
-    up.onclick = ()=>{ const nn = prompt('Edit name', s.name); if(nn){students[i].name=nn; saveStudents();} };
+    up.onclick = ()=>{ const nn = prompt('Edit name', s.name); if(nn){ students[i].name = nn.trim(); saveStudents(); } };
     const del = document.createElement('button'); del.className='btn warn'; del.textContent='Delete';
     del.onclick = ()=>{ if(confirm('Delete '+s.name+'?')){ students.splice(i,1); saveStudents(); loadAttendance(); } };
     const qrbtn = document.createElement('button'); qrbtn.className='btn'; qrbtn.textContent='QR';
@@ -295,7 +269,6 @@ function renderSavedList(){
     el.appendChild(nm); el.appendChild(rl); el.appendChild(row);
     savedList.appendChild(el);
 
-    // add to QR select
     const opt = document.createElement('option'); opt.value = s.roll || 'i'+i; opt.textContent = (s.roll? s.roll+' • ':'') + s.name;
     qrStudentSelect.appendChild(opt);
   });
@@ -334,10 +307,9 @@ function showCounts(){
   todayCount.textContent = `${marked} marked / ${total} total`;
 }
 
-/* ------------------ adding students & auto-roll ------------------ */
+/* Adding students & auto-roll */
 function normalizeName(n){ return n.trim().replace(/\s+/g,' '); }
 function nextRoll(){
-  // simple auto roll: 001,002 ... based on existing numeric rolls or index
   let max = 0;
   students.forEach(s=>{
     if(s.roll && /^\d+$/.test(s.roll)) max = Math.max(max, parseInt(s.roll,10));
@@ -365,25 +337,22 @@ pasteAddBtn.onclick = ()=>{
   alert(added + ' students added.');
 };
 
-/* export/import student list */
 pasteExportBtn.onclick = ()=>{
   if(students.length===0) return alert('No students to export.');
   const rows = ['name,roll'];
   students.forEach(s => rows.push(`"${s.name.replace(/"/g,'""')}",${s.roll}`));
-  downloadBlob(rows.join('\\n'), currentClass + '_students.csv');
+  downloadBlob(rows.join('\n'), currentClass + '_students.csv');
 };
 clearListBtn.onclick = ()=>{ if(!confirm('Delete ALL saved students?')) return; students=[]; saveStudents(); loadAttendance(); };
 
-/* ------------------ attendance export ------------------ */
+/* Attendance export */
 function downloadBlob(text, filename){
   const blob = new Blob([text], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
 }
-exportBtn.onclick = ()=>{
-  exportTodayCSV();
-};
-exportDayBtn.onclick = ()=>exportTodayCSV();
+exportBtn.onclick = ()=> exportTodayCSV();
+exportDayBtn.onclick = ()=> exportTodayCSV();
 function exportTodayCSV(){
   const date = todayStr();
   const rows = ['session,date,name,roll,status'];
@@ -393,20 +362,18 @@ function exportTodayCSV(){
     const st = attendance[key] || 'absent';
     rows.push([session, (new Date()).toISOString(), `"${s.name.replace(/"/g,'""')}"`, s.roll, st].join(','));
   });
-  downloadBlob(rows.join('\\n'), `attendance_${currentClass}_${date}.csv`);
+  downloadBlob(rows.join('\n'), `attendance_${currentClass}_${date}.csv`);
 }
 
-/* ------------------ monthly report ------------------ */
+/* Monthly report */
 monthlyReportBtn.onclick = ()=> showMonthlyReportModal();
 monthlyCSVBtn.onclick = ()=> exportMonthlyCSV();
 
-function collectMonthData(year, month){ // month: 1-12
-  // iterate each day of month and count
-  const totals = {}; // roll -> {present,absent,late,total}
+function collectMonthData(year, month){
+  const totals = {};
   students.forEach((s,i)=>{ const key = s.roll || ('i'+i); totals[key] = {name:s.name, roll:s.roll, present:0, absent:0, late:0, total:0} });
-  // iterate days
   const start = new Date(year, month-1, 1);
-  const end = new Date(year, month, 0); // last day
+  const end = new Date(year, month, 0);
   for(let d=1; d<=end.getDate(); d++){
     const dateStr = start.toISOString().slice(0,8) + String(d).padStart(2,'0');
     const dayAtt = loadJSON(attKeyFor(currentClass, dateStr), {});
@@ -425,11 +392,10 @@ function showMonthlyReportModal(){
   const now = new Date();
   const year = now.getFullYear(); const month = now.getMonth()+1;
   const totals = collectMonthData(year, month);
-  // create modal-like window using alert for simplicity
-  let text = `Monthly report for ${currentClass}: ${year}-${String(month).padStart(2,'0')}\\n\\n`;
+  let text = `Monthly report for ${currentClass}: ${year}-${String(month).padStart(2,'0')}\n\n`;
   Object.values(totals).forEach(t=>{
     const pct = t.total ? Math.round((t.present / t.total) * 100) : 0;
-    text += `${t.name} (${t.roll}) — Present: ${t.present}, Absent: ${t.absent}, Late: ${t.late}, %: ${pct}%\\n`;
+    text += `${t.name} (${t.roll}) — Present: ${t.present}, Absent: ${t.absent}, Late: ${t.late}, %: ${pct}%\n`;
   });
   alert(text);
 }
@@ -443,10 +409,10 @@ function exportMonthlyCSV(){
     const pct = t.total ? Math.round((t.present / t.total) * 100) : 0;
     rows.push(`"${t.name.replace(/"/g,'""')}",${t.roll},${t.present},${t.absent},${t.late},${t.total},${pct}`);
   });
-  downloadBlob(rows.join('\\n'), `${currentClass}_monthly_${year}_${String(month).padStart(2,'0')}.csv`);
+  downloadBlob(rows.join('\n'), `${currentClass}_monthly_${year}_${String(month).padStart(2,'0')}.csv`);
 }
 
-/* ------------------ Reset statuses ------------------ */
+/* Reset & Save */
 resetStatuses.onclick = ()=>{
   if(!confirm('Set everyone to Absent for today?')) return;
   attendance = {};
@@ -455,14 +421,14 @@ resetStatuses.onclick = ()=>{
 };
 saveBtn.onclick = ()=>{ saveAttendance(); alert('Saved today attendance.'); };
 
-/* ------------------ QR generation & scanning ------------------ */
+/* QR generation & scanning */
 function generateQRForStudent(s){
   const data = `sangfa:${currentClass}:${s.roll || ''}`;
   qrPreview.innerHTML = '';
-  QRCode.toDataURL(data, {width:300}, function (err, url) {
+  QRCode.toDataURL(data, {width:400}, function (err, url) {
     if(err) return alert('QR gen error');
     const img = document.createElement('img'); img.src=url; img.style.maxWidth='100%';
-    const dl = document.createElement('a'); dl.href=url; dl.download = `${s.roll||s.name}_qr.png`; dl.textContent='Download QR';
+    const dl = document.createElement('a'); dl.href=url; dl.download = `${(s.roll||s.name)}_qr.png`; dl.textContent='Download QR';
     dl.className='btn'; dl.style.display='inline-block'; dl.style.marginTop='8px';
     qrPreview.appendChild(img); qrPreview.appendChild(dl);
   });
@@ -474,14 +440,13 @@ genQRBtn.onclick = ()=>{
   generateQRForStudent(s);
 };
 
-let scanning = false;
-let videoStream = null;
+let scanning=false, videoStream=null;
 scanQRBtn.onclick = async ()=>{
   if(scanning){ stopScan(); return; }
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return alert('Camera not supported on this browser.');
   scannerArea.innerHTML = '';
   const video = document.createElement('video'); video.setAttribute('playsinline','true'); video.style.width='100%'; scannerArea.appendChild(video);
-  scanning = true; scanQRBtn.textContent = 'Stop Scan';
+  scanning=true; scanQRBtn.textContent='Stop Scan';
   try{
     const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
     video.srcObject = stream; video.play(); videoStream = stream;
@@ -494,7 +459,6 @@ scanQRBtn.onclick = async ()=>{
           const imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
           const code = jsQR(imgData.data, imgData.width, imgData.height);
           if(code){
-            // got code
             const data = code.data;
             stopScan();
             processQRData(data);
@@ -510,13 +474,12 @@ scanQRBtn.onclick = async ()=>{
   }
 };
 function stopScan(){
-  scanning = false; scanQRBtn.textContent='Scan';
-  if(videoStream){ videoStream.getTracks().forEach(t=>t.stop()); videoStream = null; }
-  scannerArea.innerHTML = '';
+  scanning=false; scanQRBtn.textContent='Scan';
+  if(videoStream){ videoStream.getTracks().forEach(t=>t.stop()); videoStream=null; }
+  scannerArea.innerHTML='';
 }
 
 function processQRData(data){
-  // format: sangfa:ClassName:roll
   if(!data.startsWith('sangfa:')) return alert('Unknown QR.');
   const parts = data.split(':');
   const cls = parts[1] || currentClass;
@@ -525,7 +488,6 @@ function processQRData(data){
     if(!confirm(`QR is for class "${cls}". Switch to that class and mark?`)) return;
     switchClass(cls);
   }
-  // find student by roll
   const idx = students.findIndex(s => s.roll === roll);
   if(idx >= 0){
     const key = students[idx].roll || ('i'+idx);
@@ -537,33 +499,34 @@ function processQRData(data){
   }
 }
 
-/* ------------------ CLASS selection ------------------ */
+/* Class management */
 setClassBtn.onclick = ()=>{
   const val = (classSelect.value || '').trim();
   if(!val) return alert('Type class/batch name');
   if(!classes.includes(val)) classes.push(val);
   currentClass = val;
-  saveClasses();
-  loadStudents();
-  loadAttendance();
+  saveClasses(); saveJSON(LS_KEY_CLASSES, classes);
+  loadStudents(); loadAttendance();
+  classSelect.value = '';
   alert('Class set to ' + currentClass);
 };
+
 function switchClass(name){
+  if(!name) return;
+  if(!classes.includes(name)) classes.push(name);
   currentClass = name;
-  classSelect.value = name;
   saveClasses();
-  loadStudents();
-  loadAttendance();
+  classSelect.value = '';
+  loadStudents(); loadAttendance();
 }
 
-/* ------------------ admin modal / PIN ------------------ */
-adminBtn.onclick = ()=>{ // check PIN if set
-  if(config.adminPinHash){
+/* Admin PIN */
+adminBtn.onclick = ()=> {
+  if(config && config.adminPinHash){
     const pin = prompt('Enter Admin PIN');
     if(!pin) return;
     if(hashPin(pin) !== config.adminPinHash){ return alert('Wrong PIN'); }
   }
-  // show modal
   modal.style.display = 'flex';
   firebaseConfigBox.value = JSON.stringify(config.firebaseConfig || {});
 };
@@ -572,29 +535,18 @@ savePinBtn.onclick = ()=>{
   const val = adminPinInput.value.trim();
   if(!/^\d{4,8}$/.test(val)) return alert('PIN must be 4-8 digits');
   config.adminPinHash = hashPin(val);
-  saveConfig();
+  saveJSON(LS_KEY_CONFIG, config);
   adminPinInput.value='';
   alert('Admin PIN saved.');
 };
+function hashPin(pin){ let h=0; for(let i=0;i<pin.length;i++){ h = ((h<<5)-h) + pin.charCodeAt(i); h |= 0; } return String(h); }
 
-/* simple hash for PIN (not cryptographic, okay for small app) */
-function hashPin(pin){
-  let h=0; for(let i=0;i<pin.length;i++){ h = ((h<<5)-h) + pin.charCodeAt(i); h |= 0; } return String(h);
-}
-
-/* ------------------ Firebase optional (simple sync) ------------------ */
-/*
-  To enable:
-  - create Firebase project
-  - enable Firestore (or adjust to Realtime DB)
-  - put config JSON into admin panel and click Connect
-  - this script will sync students and today's attendance (simple approach)
-*/
+/* Firebase optional */
 saveFirebaseBtn.onclick = ()=>{
   try{
     const conf = JSON.parse(firebaseConfigBox.value || '{}');
     config.firebaseConfig = conf;
-    saveConfig();
+    saveJSON(LS_KEY_CONFIG, config);
     alert('Firebase config saved. Click Connect to finish.');
   }catch(e){ alert('Invalid JSON'); }
 };
@@ -602,15 +554,12 @@ saveFirebaseBtn.onclick = ()=>{
 connectFirebaseBtn.onclick = async ()=>{
   if(!config.firebaseConfig || !config.firebaseConfig.apiKey) return alert('Save firebase config first.');
   try{
-    // dynamic import firebase
     await loadFirebaseSDK();
-    // initialize
     if(!firebaseApp){
       firebaseApp = firebase.initializeApp(config.firebaseConfig);
       firestore = firebase.firestore();
     }
     firebaseStatus.textContent = 'Connected to Firebase';
-    // push local students to cloud collection 'students/{class}'
     await syncToCloud();
     alert('Cloud sync complete (students + today).');
   }catch(e){ console.error(e); alert('Firebase connect error: '+(e.message||e)); }
@@ -633,77 +582,24 @@ async function loadFirebaseSDK(){
 
 async function syncToCloud(){
   if(!firestore) return;
-  // students: collection 'students' doc {className} -> array
   await firestore.collection('sangfa').doc('students').set({[currentClass]: students}, {merge:true});
   await firestore.collection('sangfa').doc('attendance').set({[currentClass + '_' + todayStr()]: attendance}, {merge:true});
 }
 
-/* ------------------ init load ------------------ */
+/* Init */
 function init(){
-  // classes
-  classes = loadClasses();
+  classes = loadJSON(LS_KEY_CLASSES, ['Panita Gogoi','Manash Pratim Chutia','Madhujya Chutia']);
   if(!classes.includes(currentClass)) classes.unshift(currentClass);
-  classSelect.value = currentClass;
-  classNameText.textContent = currentClass;
-  // load students and attendance
+  classSelect.value = ''; classNameText.textContent = currentClass;
   loadStudents(); loadAttendance();
   todayText.textContent = new Date().toLocaleString();
-  // populate class select options (simple)
-  // QR generator default
-  qrStudentSelect.innerHTML='';
-  students.forEach((s,i)=>{
-    const opt = document.createElement('option'); opt.value = s.roll || ('i'+i); opt.textContent = (s.roll? s.roll+' • ':'') + s.name;
-    qrStudentSelect.appendChild(opt);
-  });
 }
 init();
 
-/* ------------------ misc helpers ------------------ */
-function downloadImageDataURL(dataURL, filename){
-  const a = document.createElement('a'); a.href = dataURL; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
-}
-
-/* ------------------ generate QR for selected student (helper use) ------------------ */
-function generateQRForStudentPublic(roll, name){
-  const data = `sangfa:${currentClass}:${roll}`;
-  return QRCode.toDataURL(data, {width:400});
-}
-async function generateQRForStudent(s){
-  const data = `sangfa:${currentClass}:${s.roll || ''}`;
-  try{
-    const url = await QRCode.toDataURL(data, {width:400});
-    qrPreview.innerHTML = '';
-    const img = document.createElement('img'); img.src=url; img.style.maxWidth='100%';
-    const dl = document.createElement('a'); dl.href=url; dl.download = `${(s.roll||s.name)}_qr.png`; dl.textContent='Download QR'; dl.className='btn'; dl.style.display='inline-block'; dl.style.marginTop='8px';
-    qrPreview.appendChild(img); qrPreview.appendChild(dl);
-  }catch(e){ alert('QR error'); }
-}
-
-/* ------------------ class switch UI population on load/saveStudents ------------------ */
-function refreshUILists(){
-  // refresh classes in classSelect suggestions using datalist behaviour - we simply set placeholder options
-  // ensure qr select includes students
-  qrStudentSelect.innerHTML='';
-  students.forEach((s,i)=> { const opt = document.createElement('option'); opt.value = s.roll || ('i'+i); opt.textContent = (s.roll? s.roll+' • ':'') + s.name; qrStudentSelect.appendChild(opt); });
-}
 window.addEventListener('storage', ()=> { loadStudents(); loadAttendance(); });
+function loadStudents(){ students = loadJSON(studentsKeyFor(currentClass), []); renderSavedList(); }
+function loadAttendance(){ attendance = loadJSON(attKeyFor(currentClass, todayStr()), {}); renderAttendanceGrid(); }
 
-/* ------------------ switching class: save current and load next ------------------ */
-classSelect.addEventListener('change', ()=>{/* nothing */});
-classSelect.addEventListener('input', ()=>{/* nothing */});
-setClassBtn.addEventListener('click', ()=> {
-  const val = (classSelect.value || '').trim(); if(!val) return alert('Type class name');
-  currentClass = val; saveClasses(); loadStudents(); loadAttendance(); classNameText.textContent = currentClass; alert('Class set to ' + currentClass);
-});
-
-/* ------------------ helper to export student QR batch (optional) ------------------ */
-function exportAllQRs(){
-  // creates and downloads zips is complex in browser; we generate single images for preview instead
-  alert('Use individual QR generate buttons to download each QR. Bulk ZIP not available in this simple version.');
-}
-
-/* ------------------ finish ------------------ */
-function loadJSONOr(key, def){const v=localStorage.getItem(key); return v?JSON.parse(v):def;}
 </script>
 
 </body>
