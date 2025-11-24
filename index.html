@@ -3,13 +3,12 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Sang Fa — Attendance (Complete)</title>
+<title>Sang Fa — Attendance (Full Form)</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#f6f7fb; --card:#fff; --muted:#666; --accent:#0b6efd;
     --ok:#16a34a; --bad:#dc2626; --late:#f59e0b;
-    --shadow: 0 1px 6px rgba(12,18,30,.04);
   }
   *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
   body{margin:0;background:var(--bg);color:#111;padding:12px}
@@ -18,13 +17,13 @@
   .small{color:var(--muted);font-size:13px}
   .top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}
   input,textarea,select,button{font-size:14px}
-  input[type=text], textarea{padding:10px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;width:100%}
+  input[type=text], textarea, input[type=tel], input[type=date], input[type=number]{padding:10px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;width:100%}
   .controls{display:grid;grid-template-columns:1fr auto;gap:8px;width:100%;max-width:1200px}
   .btn{padding:9px 12px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer}
   .btn.ghost{background:#fff;color:var(--accent);border:1px solid #dbeafe}
   .btn.warn{background:var(--bad)}
-  .layout{display:grid;grid-template-columns:1fr;gap:12px;max-width:1200px}
-  .card{background:var(--card);padding:12px;border-radius:10px;box-shadow:var(--shadow)}
+  .layout{display:grid;grid-template-columns:1fr;gap:12px;max-width:1200px;margin-top:10px}
+  .card{background:var(--card);padding:12px;border-radius:10px;box-shadow:0 1px 6px rgba(12,18,30,.04)}
   .student-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:10px}
   .student{padding:10px;border-radius:8px;border:1px solid #eef2ff;background:#fff;display:flex;flex-direction:column;gap:8px}
   .name{font-weight:600}
@@ -36,46 +35,30 @@
   .late{background:var(--late);color:#fff}
   .smallmuted{font-size:12px;color:var(--muted)}
   .top-actions{display:flex;gap:8px;flex-wrap:wrap}
-  .flex-row{display:flex;gap:8px;align-items:center}
   #qrCanvas{max-width:100%;border-radius:8px}
   @media (min-width:880px){
     .layout{grid-template-columns:420px 1fr}
     .controls{grid-template-columns:1fr auto}
   }
   .modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;padding:18px}
-  .modal .card{max-width:720px;width:100%}
-  .trainer-buttons{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
-  .trainer-buttons button{padding:8px 14px;border-radius:6px;border:none;color:#fff;cursor:pointer}
-  .btn-blue{background:#2563eb} .btn-green{background:#16a34a} .btn-amber{background:#d97706}
-  .btn-purple{background:#7c3aed} .btn-red{background:#dc2626} .btn-gray{background:#6b7280}
-  .hint{font-size:13px;color:#444}
-  /* small helpers */
-  .muted { color:var(--muted); font-size:13px; }
+  .modal .card{max-width:760px;width:100%}
+  label{font-size:13px;color:#333;display:block;margin-bottom:6px}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .col{flex:1;min-width:120px}
 </style>
 </head>
 <body>
 
 <header>
   <div>
-    <h1>Sang Fa — Attendance (Complete)</h1>
-    <div class="small">Auto-roll, monthly reports, QR scan & generate, fees, cloud optional.</div>
+    <h1>Sang Fa — Attendance (Full)</h1>
+    <div class="small">Full student profiles, QR, device assignment, CSV export, monthly reports.</div>
   </div>
 </header>
 
-<!-- Quick trainer buttons (7 trainers) -->
-<div class="trainer-buttons" id="trainerButtons">
-  <button class="btn-blue" onclick="attemptSwitch('Prabita Gogoi')">Prabita Gogoi</button>
-  <button class="btn-green" onclick="attemptSwitch('Manash Pratim Chutia')">Manash Pratim Chutia</button>
-  <button class="btn-amber" onclick="attemptSwitch('Madhurjya Chutia')">Madhurjya Chutia</button>
-  <button class="btn-purple" onclick="attemptSwitch('Suraj Saikia')">Suraj Saikia</button>
-  <button class="btn-red" onclick="attemptSwitch('Bhagya Saikia')">Bhagya Saikia</button>
-  <button class="btn-gray" onclick="attemptSwitch('Surajit Bora')">Surajit Bora</button>
-  <button class="btn-blue" onclick="attemptSwitch('Ashim Gogoi')">Ashim Gogoi</button>
-</div>
-
 <div class="top">
   <div class="controls">
-    <input id="classSelect" placeholder="Class / Batch name (select or type new)"/>
+    <input id="classSelect" placeholder="Class / Trainer name (e.g., Ashim Gogoi)"/>
     <div style="display:flex;gap:8px">
       <button id="setClassBtn" class="btn">Set</button>
       <button id="adminBtn" class="btn ghost">Admin</button>
@@ -85,36 +68,61 @@
   <div class="top-actions">
     <button id="exportDayBtn" class="btn">Export Today's CSV</button>
     <button id="monthlyReportBtn" class="btn ghost">Monthly Report</button>
-    <button id="syncBtn" class="btn ghost">Cloud Sync</button>
+    <button id="feesReportBtn" class="btn ghost">Monthly Fees CSV</button>
   </div>
 </div>
 
 <div class="layout">
-  <!-- LEFT -->
-  <div class="card" id="leftCard">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div><strong>Students — (auto roll numbers)</strong><div class="smallmuted">Add once — saved locally or to cloud</div></div>
-      <div class="smallmuted" id="countStudents">0 students</div>
-    </div>
-
-    <div style="margin-top:10px;">
-      <textarea id="pasteArea" rows="5" placeholder="Paste list: name,roll (optional). One per line. Example: Ashim,001"></textarea>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button id="pasteAddBtn" class="btn">Add / Import</button>
-        <button id="exportListBtn" class="btn ghost">Export Student List</button>
-        <button id="clearListBtn" class="btn warn">Clear List</button>
+  <!-- Left: Student Form + saved -->
+  <div class="card">
+    <strong>Add / Edit Student</strong>
+    <div class="smallmuted">Fill details and click Add Student</div>
+    <div style="margin-top:8px">
+      <div class="row">
+        <div class="col"><label>Registration No.</label><input id="regNo" placeholder="R001 or your ID"/></div>
+        <div class="col"><label>Name</label><input id="sname" placeholder="Student full name"/></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div class="col"><label>D.O.B</label><input id="dob" type="date"/></div>
+        <div class="col"><label>Father Name</label><input id="father"/></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div class="col"><label>Phone</label><input id="phone" type="tel" placeholder="10 digit"/></div>
+        <div class="col"><label>Belt Rank</label><input id="belt" placeholder="White/Yellow/Blue..."/></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div class="col"><label>Aadhaar No</label><input id="aadhaar" placeholder="xxxx xxxx xxxx"/></div>
+        <div class="col"><label>Level</label>
+          <select id="level">
+            <option value="Beginner">Beginner</option>
+            <option value="Advance">Advance</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div class="col"><label>Monthly Fee (₹)</label><input id="monthlyFee" type="number" min="0" placeholder="0"/></div>
+        <div class="col" style="align-self:flex-end">
+          <button id="addStudentBtn" class="btn">Add Student</button>
+          <button id="updateStudentBtn" class="btn ghost" style="display:none">Update</button>
+        </div>
       </div>
     </div>
 
-    <div style="margin-top:12px">
+    <hr style="margin:12px 0"/>
+    <div style="display:flex;justify-content:space-between;align-items:center">
       <strong>Saved Students</strong>
-      <div class="student-list" id="savedList" style="margin-top:8px"></div>
+      <div class="smallmuted" id="countStudents">0 students</div>
+    </div>
+
+    <div class="student-list" id="savedList"></div>
+    <div style="margin-top:8px;display:flex;gap:8px">
+      <button id="exportStudentsBtn" class="btn ghost">Export Student CSV</button>
+      <button id="clearAllStudentsBtn" class="btn warn">Clear All</button>
     </div>
 
     <hr style="margin:12px 0"/>
-
     <div><strong>QR Tools</strong>
-      <div class="smallmuted">Generate QR for a student or scan a QR to mark Present</div>
+      <div class="smallmuted">Generate QR for a student or Scan to mark Present</div>
       <div style="display:flex;gap:8px;margin-top:8px">
         <select id="qrStudentSelect" style="flex:1"></select>
         <button id="genQRBtn" class="btn">Generate</button>
@@ -124,30 +132,9 @@
       <div id="scannerArea" style="margin-top:8px"></div>
     </div>
 
-    <!-- FEES MANAGEMENT -->
-    <hr style="margin:12px 0"/>
-    <div>
-      <strong>Fees / Payments</strong>
-      <div class="smallmuted">Set monthly fee & mark payment per student</div>
-
-      <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
-        <select id="feeMonthSelect"></select>
-        <input id="feeAmountInput" placeholder="Default monthly amount (e.g. 500)" style="width:180px; padding:8px; border-radius:6px; border:1px solid #e2e8f0;">
-        <button id="setDefaultFeeBtn" class="btn ghost">Set Default</button>
-      </div>
-
-      <div style="margin-top:8px;">
-        <button id="openFeesListBtn" class="btn">Open Fees List</button>
-        <button id="exportFeesCSVBtn" class="btn ghost">Export Fees CSV</button>
-        <button id="combinedReportBtn" class="btn">Combined Fees + Attendance</button>
-      </div>
-
-      <div id="feesListArea" style="margin-top:10px;"></div>
-    </div>
-
   </div>
 
-  <!-- RIGHT -->
+  <!-- Right: Attendance -->
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
       <div>
@@ -166,16 +153,16 @@
       <button id="exportBtn" class="btn">Export Today's CSV</button>
       <button id="saveBtn" class="btn ghost">Save Today</button>
       <button id="resetStatuses" class="btn ghost">Reset All to Absent</button>
-      <button id="monthlyCSVBtn" class="btn ghost">Export Monthly CSV</button>
+      <button id="exportMonthlyCSV" class="btn ghost">Export Monthly CSV</button>
     </div>
 
     <div style="margin-top:12px;color:var(--muted);font-size:12px">
-      Tip: Add students once. To mark by QR, generate each student's QR and print/share it. Scanning a student's QR marks them Present.
+      Tip: Add students once. To mark by QR, generate each student's QR and print/share it. Scanning marks Present.
     </div>
   </div>
 </div>
 
-<!-- Admin Modal -->
+<!-- Admin modal -->
 <div id="modal" class="modal"><div class="card">
   <div style="display:flex;justify-content:space-between;align-items:center">
     <strong>Admin Panel</strong>
@@ -183,28 +170,29 @@
   </div>
 
   <div style="margin-top:10px">
-    <div><label>Set / Change Admin PIN (4-8 digits)</label>
-      <input id="adminPinInput" placeholder="Set new PIN" />
+    <label>Set / Change Admin PIN (4-8 digits)</label>
+    <div class="row">
+      <input id="adminPinInput" placeholder="e.g., 1234 (4-8 digits)"/>
       <button id="savePinBtn" class="btn ghost">Save PIN</button>
     </div>
 
     <hr/>
 
     <div><strong>Device assignment</strong>
-      <div class="smallmuted">Assign this device to a trainer/class so that trainer can't switch to other classes without PIN.</div>
-      <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+      <div class="smallmuted">Assign this device to a trainer/class. Once assigned, trainer cannot switch classes without Admin PIN.</div>
+      <div class="row" style="margin-top:8px">
         <select id="deviceAssignSelect" style="flex:1"></select>
         <button id="assignDeviceBtn" class="btn">Assign Device</button>
-        <button id="clearAssignBtn" class="btn ghost">Clear</button>
+        <button id="clearDeviceBtn" class="btn ghost">Clear</button>
       </div>
-      <div id="deviceAssignStatus" class="smallmuted" style="margin-top:8px"></div>
+      <div class="smallmuted" id="deviceAssignedText" style="margin-top:8px"></div>
     </div>
 
     <hr/>
 
-    <div><strong>Cloud (Firebase) - Optional</strong>
-      <div class="smallmuted">Paste your Firebase config (apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId)</div>
-      <textarea id="firebaseConfig" rows="5" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}'></textarea>
+    <div><strong>Firebase (optional)</strong>
+      <div class="smallmuted">Paste Firebase config JSON here to enable cloud sync (optional).</div>
+      <textarea id="firebaseConfig" rows="4" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}'></textarea>
       <div style="display:flex;gap:8px;margin-top:8px">
         <button id="saveFirebaseBtn" class="btn">Save Firebase Config</button>
         <button id="connectFirebaseBtn" class="btn ghost">Connect / Sync Now</button>
@@ -214,234 +202,282 @@
   </div>
 </div></div>
 
-<!-- libs -->
+<!-- dependencies -->
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <script>
-/* ---------------- APP CONFIG & KEYS ---------------- */
-const APP_PREFIX = 'sangfa_full_v4';
-const LS_KEY_CONFIG = APP_PREFIX + '_config';
-const LS_KEY_STUDENTS_PREFIX = APP_PREFIX + '_students_';
-const LS_KEY_ATT_PREFIX = APP_PREFIX + '_att_';
-const LS_KEY_CLASSES = APP_PREFIX + '_classes';
-const LS_KEY_DEVICE_ASSIGN = APP_PREFIX + '_device_assign'; // stores assigned class for this device
-const LS_KEY_FEES_PREFIX = APP_PREFIX + '_fees_'; // + class + '_' + YYYY-MM
+/* ---------------- App constants & keys ---------------- */
+const APP_PREFIX = 'sangfa_full_v2';
+const LS_CONFIG = APP_PREFIX + '_config';
+const LS_CLASSES = APP_PREFIX + '_classes';
+const LS_STUDENTS_PREFIX = APP_PREFIX + '_students_'; // + class
+const LS_ATT_PREFIX = APP_PREFIX + '_att_'; // + class + '_' + date
+const LS_DEVICE = APP_PREFIX + '_device'; // assigned device info
 
-/* DOM refs */
-const pasteArea = document.getElementById('pasteArea');
-const pasteAddBtn = document.getElementById('pasteAddBtn');
-const savedList = document.getElementById('savedList');
-const attendanceGrid = document.getElementById('attendanceGrid');
+/* ---------------- DOM ---------------- */
 const classSelect = document.getElementById('classSelect');
 const setClassBtn = document.getElementById('setClassBtn');
 const classNameText = document.getElementById('classNameText');
 const todayText = document.getElementById('todayText');
 const countStudents = document.getElementById('countStudents');
+const savedList = document.getElementById('savedList');
+const attendanceGrid = document.getElementById('attendanceGrid');
 const todayCount = document.getElementById('todayCount');
-const pasteExportBtn = document.getElementById('exportListBtn');
-const clearListBtn = document.getElementById('clearListBtn');
-const exportBtn = document.getElementById('exportBtn');
-const exportDayBtn = document.getElementById('exportDayBtn');
-const monthlyReportBtn = document.getElementById('monthlyReportBtn');
-const monthlyCSVBtn = document.getElementById('monthlyCSVBtn');
-const saveBtn = document.getElementById('saveBtn');
-const resetStatuses = document.getElementById('resetStatuses');
+
+const regNo = document.getElementById('regNo');
+const sname = document.getElementById('sname');
+const dob = document.getElementById('dob');
+const father = document.getElementById('father');
+const phone = document.getElementById('phone');
+const belt = document.getElementById('belt');
+const aadhaar = document.getElementById('aadhaar');
+const level = document.getElementById('level');
+const monthlyFee = document.getElementById('monthlyFee');
+const addStudentBtn = document.getElementById('addStudentBtn');
+const updateStudentBtn = document.getElementById('updateStudentBtn');
+
+const exportStudentsBtn = document.getElementById('exportStudentsBtn');
+const clearAllStudentsBtn = document.getElementById('clearAllStudentsBtn');
+
 const qrStudentSelect = document.getElementById('qrStudentSelect');
 const genQRBtn = document.getElementById('genQRBtn');
 const qrPreview = document.getElementById('qrPreview');
 const scanQRBtn = document.getElementById('scanQRBtn');
 const scannerArea = document.getElementById('scannerArea');
-const modal = document.getElementById('modal');
+
+const exportBtn = document.getElementById('exportBtn');
+const exportDayBtn = document.getElementById('exportDayBtn');
+const exportMonthlyCSV = document.getElementById('exportMonthlyCSV');
+const monthlyReportBtn = document.getElementById('monthlyReportBtn');
+const feesReportBtn = document.getElementById('feesReportBtn');
+const saveBtn = document.getElementById('saveBtn');
+const resetStatuses = document.getElementById('resetStatuses');
+
 const adminBtn = document.getElementById('adminBtn');
+const modal = document.getElementById('modal');
 const closeModal = document.getElementById('closeModal');
 const adminPinInput = document.getElementById('adminPinInput');
 const savePinBtn = document.getElementById('savePinBtn');
+
+const deviceAssignSelect = document.getElementById('deviceAssignSelect');
+const assignDeviceBtn = document.getElementById('assignDeviceBtn');
+const clearDeviceBtn = document.getElementById('clearDeviceBtn');
+const deviceAssignedText = document.getElementById('deviceAssignedText');
+
 const firebaseConfigBox = document.getElementById('firebaseConfig');
 const saveFirebaseBtn = document.getElementById('saveFirebaseBtn');
 const connectFirebaseBtn = document.getElementById('connectFirebaseBtn');
 const firebaseStatus = document.getElementById('firebaseStatus');
-const syncBtn = document.getElementById('syncBtn');
-const deviceAssignSelect = document.getElementById('deviceAssignSelect');
-const assignDeviceBtn = document.getElementById('assignDeviceBtn');
-const clearAssignBtn = document.getElementById('clearAssignBtn');
-const deviceAssignStatus = document.getElementById('deviceAssignStatus');
 
-/* Fees module refs */
-const feeMonthSelect = document.getElementById('feeMonthSelect');
-const feeAmountInput = document.getElementById('feeAmountInput');
-const setDefaultFeeBtn = document.getElementById('setDefaultFeeBtn');
-const openFeesListBtn = document.getElementById('openFeesListBtn');
-const feesListArea = document.getElementById('feesListArea');
-const exportFeesCSVBtn = document.getElementById('exportFeesCSVBtn');
-const combinedReportBtn = document.getElementById('combinedReportBtn');
+/* ---------------- State ---------------- */
+let config = loadJSON(LS_CONFIG, {adminPinHash: null, firebaseConfig: null});
+let classes = loadJSON(LS_CLASSES, ['Ashim Gogoi']) || ['Ashim Gogoi'];
+let currentClass = classes[0];
+let students = []; // array of objects: {regNo,name,dob,father,phone,belt,aadhaar,level,monthlyFee}
+let attendance = {}; // {regNo: 'present'|'absent'|'late'}
+let editingIndex = -1;
+let scanning=false, videoStream=null;
 
-/* State */
-let classes = loadJSON(LS_KEY_CLASSES, ['Prabita Gogoi','Manash Pratim Chutia','Madhurjya Chutia','Suraj Saikia','Bhagya Saikia','Surajit Bora','Ashim Gogoi']);
-let currentClass = loadJSON(LS_KEY_DEVICE_ASSIGN, classes[0]) || classes[0]; // default to assigned or first
-let students = [];
-let attendance = {};
-let config = loadJSON(LS_KEY_CONFIG, {adminPinHash:null, firebaseConfig:null});
-
-/* ------------------ UTIL ------------------ */
-function loadJSON(k, def=null){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):def;}catch(e){return def;} }
-function saveJSON(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+/* ---------------- Helpers ---------------- */
 function todayStr(d=new Date()){ return d.toISOString().slice(0,10); }
-function studentsKeyFor(cls){ return LS_KEY_STUDENTS_PREFIX + cls; }
-function attKeyFor(cls, dateStr){ return LS_KEY_ATT_PREFIX + cls + '_' + dateStr; }
-function feesKeyFor(cls, month){ return LS_KEY_FEES_PREFIX + cls + '_' + month; }
-function monthKeyFor(dateObj){ const y = dateObj.getFullYear(); const m = String(dateObj.getMonth()+1).padStart(2,'0'); return `${y}-${m}`; }
+function loadJSON(k, def){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):def;}catch(e){return def;} }
+function saveJSON(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+function studentsKey(cls){ return LS_STUDENTS_PREFIX + cls; }
+function attKey(cls, dateStr){ return LS_ATT_PREFIX + cls + '_' + dateStr; }
+function hashPin(pin){ let h=0; for(let i=0;i<pin.length;i++){ h = ((h<<5)-h) + pin.charCodeAt(i); h |= 0;} return String(h); }
+function downloadBlob(text, filename){ const blob=new Blob([text], {type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); }
 
-/* ------------------ BASIC LOAD ------------------ */
-function init(){
-  // classes (ensure default list)
-  classes = loadJSON(LS_KEY_CLASSES, classes);
-  // ensure assigned class persists
-  const assigned = loadJSON(LS_KEY_DEVICE_ASSIGN, null);
-  if(assigned) currentClass = assigned;
-  // UI
-  populateDeviceAssignSelect();
-  ensureMonthOptions();
-  loadStudents(); loadAttendance();
+/* ---------------- Load / Save ---------------- */
+function loadApp(){
+  config = loadJSON(LS_CONFIG, {adminPinHash:null, firebaseConfig:null});
+  classes = loadJSON(LS_CLASSES, classes);
+  if(!classes.includes(currentClass)) classes.unshift(currentClass);
+  classSelect.value = currentClass;
+  loadStudents();
+  loadAttendance();
+  refreshDeviceUI();
+  renderUI();
+}
+function saveConfig(){ saveJSON(LS_CONFIG, config); }
+function saveStudents(){ saveJSON(studentsKey(currentClass), students); renderSavedList(); }
+function loadStudents(){ students = loadJSON(studentsKey(currentClass), []); renderSavedList(); }
+function saveAttendance(){ saveJSON(attKey(currentClass, todayStr()), attendance); renderAttendanceGrid(); }
+function loadAttendance(){ attendance = loadJSON(attKey(currentClass, todayStr()), {}); renderAttendanceGrid(); }
+
+/* ---------------- Render functions ---------------- */
+function renderUI(){
   classNameText.textContent = currentClass;
   todayText.textContent = new Date().toLocaleString();
-  updateDeviceAssignStatus();
 }
-init();
-
-/* ------------------ Students & Attendance ------------------ */
-function loadStudents(){ students = loadJSON(studentsKeyFor(currentClass), []); renderSavedList(); }
-function saveStudents(){ saveJSON(studentsKeyFor(currentClass), students); renderSavedList(); }
-function loadAttendance(){ attendance = loadJSON(attKeyFor(currentClass, todayStr()), {}); renderAttendanceGrid(); }
-function saveAttendance(){ saveJSON(attKeyFor(currentClass, todayStr()), attendance); showCounts(); }
-
-/* Render functions */
 function renderSavedList(){
   savedList.innerHTML=''; qrStudentSelect.innerHTML='';
   countStudents.textContent = students.length + ' students';
   students.forEach((s,i)=>{
-    const el = document.createElement('div'); el.className='student';
-    const nm = document.createElement('div'); nm.className='name'; nm.textContent = s.name;
-    const rl = document.createElement('div'); rl.className='roll'; rl.textContent = 'Roll: ' + (s.roll || '');
-    const row = document.createElement('div'); row.style.display='flex'; row.style.gap='6px';
-    const up = document.createElement('button'); up.className='btn ghost'; up.textContent='Edit';
-    up.onclick = ()=>{ const nn = prompt('Edit name', s.name); if(nn){ students[i].name = nn.trim(); saveStudents(); } };
-    const del = document.createElement('button'); del.className='btn warn'; del.textContent='Delete';
-    del.onclick = ()=>{ if(confirm('Delete '+s.name+'?')){ students.splice(i,1); saveStudents(); loadAttendance(); } };
-    const qrbtn = document.createElement('button'); qrbtn.className='btn'; qrbtn.textContent='QR';
-    qrbtn.onclick = ()=>{ generateQRForStudent(s); };
-    row.appendChild(up); row.appendChild(del); row.appendChild(qrbtn);
-    el.appendChild(nm); el.appendChild(rl); el.appendChild(row);
+    const el=document.createElement('div'); el.className='student';
+    const nm=document.createElement('div'); nm.className='name'; nm.textContent = s.name;
+    const rl=document.createElement('div'); rl.className='roll'; rl.textContent = 'Reg: '+s.regNo + ' • ' + s.level;
+    const details=document.createElement('div'); details.className='smallmuted';
+    details.textContent = `DOB: ${s.dob || '-'} | Father: ${s.father || '-'} | Phone: ${s.phone || '-'} | Belt: ${s.belt || '-'} | Aadhaar: ${s.aadhaar || '-' } | Fee: ${s.monthlyFee || 0}`;
+    const row=document.createElement('div'); row.style.display='flex'; row.style.gap='6px';
+    const useBtn=document.createElement('button'); useBtn.className='btn ghost'; useBtn.textContent='Use';
+    useBtn.onclick = ()=> { startUsingStudent(i); };
+    const editBtn=document.createElement('button'); editBtn.className='btn'; editBtn.textContent='Edit';
+    editBtn.onclick = ()=> { startEditStudent(i); };
+    const delBtn=document.createElement('button'); delBtn.className='btn warn'; delBtn.textContent='Delete';
+    delBtn.onclick = ()=> { if(confirm('Delete '+s.name+'?')){ students.splice(i,1); saveStudents(); loadAttendance(); } };
+    const qrBtn=document.createElement('button'); qrBtn.className='btn ghost'; qrBtn.textContent='QR';
+    qrBtn.onclick = ()=> { generateQRForStudent(s); };
+    row.appendChild(useBtn); row.appendChild(editBtn); row.appendChild(qrBtn); row.appendChild(delBtn);
+    el.appendChild(nm); el.appendChild(rl); el.appendChild(details); el.appendChild(row);
     savedList.appendChild(el);
 
-    const opt = document.createElement('option'); opt.value = s.roll || 'i'+i; opt.textContent = (s.roll? s.roll+' • ':'') + s.name;
+    // select option
+    const opt=document.createElement('option'); opt.value = s.regNo; opt.textContent = `${s.regNo} • ${s.name}`;
     qrStudentSelect.appendChild(opt);
   });
   renderAttendanceGrid();
 }
-
 function renderAttendanceGrid(){
   attendanceGrid.innerHTML='';
   classNameText.textContent = currentClass;
   todayText.textContent = new Date().toLocaleString();
   students.forEach((s,i)=>{
-    const key = s.roll || ('i'+i);
+    const key = s.regNo;
     const st = attendance[key] || 'absent';
-    const c = document.createElement('div'); c.className='student';
-    const n = document.createElement('div'); n.className='name'; n.textContent = s.name;
-    const r = document.createElement('div'); r.className='roll'; r.textContent = s.roll || '';
-    const stRow = document.createElement('div'); stRow.className='status-row';
-    const b1 = document.createElement('button'); b1.className='sbtn present'; b1.textContent='Present';
-    const b2 = document.createElement('button'); b2.className='sbtn absent'; b2.textContent='Absent';
-    const b3 = document.createElement('button'); b3.className='sbtn late'; b3.textContent='Late';
-    const highlight = (el, on)=> el.style.opacity = on? '1' : '0.6';
+    const c=document.createElement('div'); c.className='student';
+    const n=document.createElement('div'); n.className='name'; n.textContent = s.name;
+    const r=document.createElement('div'); r.className='roll'; r.textContent = s.regNo + (s.level? ' • '+s.level : '');
+    const stRow=document.createElement('div'); stRow.className='status-row';
+    const b1=document.createElement('button'); b1.className='sbtn present'; b1.textContent='Present';
+    const b2=document.createElement('button'); b2.className='sbtn absent'; b2.textContent='Absent';
+    const b3=document.createElement('button'); b3.className='sbtn late'; b3.textContent='Late';
+    const highlight=(el,on)=> el.style.opacity = on? '1' : '0.6';
     highlight(b1, st==='present'); highlight(b2, st==='absent'); highlight(b3, st==='late');
-    b1.onclick = ()=>{ attendance[key] = 'present'; saveAttendance(); renderAttendanceGrid(); };
-    b2.onclick = ()=>{ attendance[key] = 'absent'; saveAttendance(); renderAttendanceGrid(); };
-    b3.onclick = ()=>{ attendance[key] = 'late'; saveAttendance(); renderAttendanceGrid(); };
+    b1.onclick = ()=>{ attendance[key]='present'; saveAttendance(); renderAttendanceGrid(); };
+    b2.onclick = ()=>{ attendance[key]='absent'; saveAttendance(); renderAttendanceGrid(); };
+    b3.onclick = ()=>{ attendance[key]='late'; saveAttendance(); renderAttendanceGrid(); };
     stRow.appendChild(b1); stRow.appendChild(b2); stRow.appendChild(b3);
     c.appendChild(n); c.appendChild(r); c.appendChild(stRow);
     attendanceGrid.appendChild(c);
   });
-  showCounts();
-}
-
-function showCounts(){
   const total = students.length;
   const marked = Object.keys(attendance).length;
   todayCount.textContent = `${marked} marked / ${total} total`;
 }
 
-/* Add students & import */
-function normalizeName(n){ return n.trim().replace(/\s+/g,' '); }
-function nextRoll(){
-  let max = 0;
-  students.forEach(s=>{
-    if(s.roll && /^\d+$/.test(s.roll)) max = Math.max(max, parseInt(s.roll,10));
-  });
-  return String(max + 1).padStart(3,'0');
+/* ---------------- Student add/edit ---------------- */
+function clearForm(){ regNo.value=''; sname.value=''; dob.value=''; father.value=''; phone.value=''; belt.value=''; aadhaar.value=''; level.value='Beginner'; monthlyFee.value=''; editingIndex=-1; updateStudentBtn.style.display='none'; addStudentBtn.style.display='inline-block'; }
+function startEditStudent(i){
+  const s = students[i];
+  regNo.value = s.regNo; sname.value = s.name; dob.value=s.dob||''; father.value=s.father||''; phone.value=s.phone||''; belt.value=s.belt||''; aadhaar.value=s.aadhaar||''; level.value = s.level||'Beginner'; monthlyFee.value = s.monthlyFee||'';
+  editingIndex = i;
+  updateStudentBtn.style.display='inline-block'; addStudentBtn.style.display='none';
 }
-pasteAddBtn.onclick = ()=>{
-  const raw = pasteArea.value.trim();
-  if(!raw) return alert('Paste student list (name,roll optional).');
-  const lines = raw.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-  let added=0;
-  lines.forEach(line=>{
-    const parts = line.split(',').map(p=>p.trim());
-    const name = normalizeName(parts[0]);
-    let roll = parts[1] || '';
-    if(!roll) roll = nextRoll();
-    if(name){
-      students.push({name, roll});
-      added++;
-    }
-  });
-  saveStudents();
-  pasteArea.value='';
-  alert(added + ' students added.');
-};
-pasteExportBtn.onclick = ()=>{
-  if(students.length===0) return alert('No students to export.');
-  const rows = ['name,roll'];
-  students.forEach(s => rows.push(`"${s.name.replace(/"/g,'""')}",${s.roll}`));
-  downloadBlob(rows.join('\n'), currentClass + '_students.csv');
-};
-clearListBtn.onclick = ()=>{ if(!confirm('Delete ALL saved students?')) return; students=[]; saveStudents(); loadAttendance(); };
+function startUsingStudent(i){
+  // quick: prefill form to create QR or to mark
+  const s = students[i];
+  alert('Using student: ' + s.name + '\\nYou can generate QR or mark attendance.');
+}
 
-/* Export attendance */
-function downloadBlob(text, filename){
-  const blob = new Blob([text], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+addStudentBtn.onclick = ()=>{
+  const s = {
+    regNo: (regNo.value || '').trim() || generateRegNo(),
+    name: (sname.value || '').trim(),
+    dob: (dob.value || '').trim(),
+    father: (father.value || '').trim(),
+    phone: (phone.value || '').trim(),
+    belt: (belt.value || '').trim(),
+    aadhaar: (aadhaar.value || '').trim(),
+    level: level.value,
+    monthlyFee: monthlyFee.value ? Number(monthlyFee.value) : 0
+  };
+  if(!s.name){ return alert('Enter student name'); }
+  if(students.find(x=>x.regNo === s.regNo)){ return alert('Registration No already exists. Use edit to update.'); }
+  students.push(s);
+  saveStudents();
+  clearForm();
+  alert('Student added.');
+};
+
+updateStudentBtn.onclick = ()=>{
+  if(editingIndex < 0) return;
+  const s = students[editingIndex];
+  s.regNo = (regNo.value || '').trim();
+  s.name = (sname.value || '').trim();
+  s.dob = (dob.value || '').trim();
+  s.father = (father.value || '').trim();
+  s.phone = (phone.value || '').trim();
+  s.belt = (belt.value || '').trim();
+  s.aadhaar = (aadhaar.value || '').trim();
+  s.level = level.value;
+  s.monthlyFee = monthlyFee.value ? Number(monthlyFee.value) : 0;
+  saveStudents();
+  clearForm();
+  alert('Student updated.');
+};
+
+function generateRegNo(){
+  // create R001 like auto number
+  let max=0;
+  students.forEach(s=>{
+    const m = s.regNo.replace(/[^\d]/g,'') || '0';
+    const n = parseInt(m,10) || 0;
+    if(n>max) max=n;
+  });
+  return 'R' + String(max+1).padStart(3,'0');
 }
-exportBtn.onclick = ()=> exportTodayCSV();
-exportDayBtn.onclick = ()=> exportTodayCSV();
+
+/* ---------------- Export functions ---------------- */
+function exportStudentsCSV(){
+  if(students.length===0) return alert('No students');
+  const rows = ['regNo,name,dob,father,phone,belt,aadhaar,level,monthlyFee'];
+  students.forEach(s => {
+    rows.push(`"${s.regNo}","${s.name.replace(/"/g,'""')}","${s.dob}","${s.father.replace(/"/g,'""')}","${s.phone}","${s.belt}","${s.aadhaar}","${s.level}",${s.monthlyFee||0}`);
+  });
+  downloadBlob(rows.join('\\n'), `${currentClass}_students.csv`);
+}
+
 function exportTodayCSV(){
   const date = todayStr();
-  const rows = ['session,date,name,roll,status'];
-  const session = currentClass;
-  students.forEach((s,i)=>{
-    const key = s.roll || ('i' + i);
-    const st = attendance[key] || 'absent';
-    rows.push([session, (new Date()).toISOString(), `"${s.name.replace(/"/g,'""')}"`, s.roll, st].join(','));
+  const rows = ['class,date,regNo,name,status'];
+  students.forEach(s=>{
+    const st = attendance[s.regNo] || 'absent';
+    rows.push(`${currentClass},${(new Date()).toISOString()},"${s.regNo}","${s.name.replace(/"/g,'""')}",${st}`);
   });
-  downloadBlob(rows.join('\n'), `attendance_${currentClass}_${date}.csv`);
+  downloadBlob(rows.join('\\n'), `attendance_${currentClass}_${date}.csv`);
 }
 
-/* Monthly attendance (collectMonthData used by fees) */
-monthlyReportBtn.onclick = ()=> showMonthlyReportModal();
-monthlyCSVBtn.onclick = ()=> exportMonthlyCSV();
+function exportMonthlyCSV(){
+  const now = new Date(); const year = now.getFullYear(); const month = now.getMonth()+1;
+  const totals = collectMonthData(year, month);
+  const rows = ['regNo,name,present,absent,late,total,percent'];
+  Object.values(totals).forEach(t=>{
+    const pct = t.total ? Math.round((t.present / t.total) * 100) : 0;
+    rows.push(`"${t.roll}","${t.name.replace(/"/g,'""')}",${t.present},${t.absent},${t.late},${t.total},${pct}`);
+  });
+  downloadBlob(rows.join('\\n'), `${currentClass}_monthly_${year}_${String(month).padStart(2,'0')}.csv`);
+}
 
-function collectMonthData(year, month){ // month: 1-12
-  const totals = {};
-  students.forEach((s,i)=>{ const key = s.roll || ('i'+i); totals[key] = {name:s.name, roll:s.roll, present:0, absent:0, late:0, total:0} });
+function exportMonthlyFeesCSV(){
+  // exports student monthly fee records (basic)
+  if(students.length===0) return alert('No students');
+  const rows = ['regNo,name,monthlyFee'];
+  students.forEach(s => rows.push(`"${s.regNo}","${s.name.replace(/"/g,'""')}",${s.monthlyFee||0}`));
+  downloadBlob(rows.join('\\n'), `${currentClass}_fees_list.csv`);
+}
+
+/* ---------------- Monthly calculations ---------------- */
+function collectMonthData(year, month){
+  const totals = {}; // regNo -> {name, roll, present, absent, late, total}
+  students.forEach(s=> totals[s.regNo] = {name:s.name, roll:s.regNo, present:0, absent:0, late:0, total:0});
   const start = new Date(year, month-1, 1);
   const end = new Date(year, month, 0);
   for(let d=1; d<=end.getDate(); d++){
     const dateStr = start.toISOString().slice(0,8) + String(d).padStart(2,'0');
-    const dayAtt = loadJSON(attKeyFor(currentClass, dateStr), {});
+    const dayAtt = loadJSON(attKey(currentClass, dateStr), {});
     Object.keys(dayAtt).forEach(k=>{
-      if(!totals[k]) totals[k] = {name:k, roll:'', present:0, absent:0, late:0, total:0};
+      if(!totals[k]) totals[k] = {name:k, roll:k, present:0, absent:0, late:0, total:0};
       totals[k].total++;
       if(dayAtt[k] === 'present') totals[k].present++;
       else if(dayAtt[k] === 'absent') totals[k].absent++;
@@ -451,65 +487,52 @@ function collectMonthData(year, month){ // month: 1-12
   return totals;
 }
 
-function showMonthlyReportModal(){
+function showMonthlyReport(){
   const now = new Date();
   const year = now.getFullYear(); const month = now.getMonth()+1;
   const totals = collectMonthData(year, month);
-  let text = `Monthly report for ${currentClass}: ${year}-${String(month).padStart(2,'0')}\n\n`;
+  let text = `Monthly report for ${currentClass}: ${year}-${String(month).padStart(2,'0')}\\n\\n`;
   Object.values(totals).forEach(t=>{
     const pct = t.total ? Math.round((t.present / t.total) * 100) : 0;
-    text += `${t.name} (${t.roll}) — Present: ${t.present}, Absent: ${t.absent}, Late: ${t.late}, %: ${pct}%\n`;
+    text += `${t.name} (${t.roll}) — Present: ${t.present}, Absent: ${t.absent}, Late: ${t.late}, %: ${pct}%\\n`;
   });
   alert(text);
 }
 
-function exportMonthlyCSV(){
-  const now = new Date();
-  const year = now.getFullYear(); const month = now.getMonth()+1;
-  const totals = collectMonthData(year, month);
-  const rows = ['name,roll,present,absent,late,total,percent'];
-  Object.values(totals).forEach(t=>{
-    const pct = t.total ? Math.round((t.present / t.total) * 100) : 0;
-    rows.push(`"${t.name.replace(/"/g,'""')}",${t.roll},${t.present},${t.absent},${t.late},${t.total},${pct}`);
-  });
-  downloadBlob(rows.join('\n'), `${currentClass}_monthly_${year}_${String(month).padStart(2,'0')}.csv`);
-}
-
-/* Reset & Save */
+/* ---------------- Reset & Save ---------------- */
 resetStatuses.onclick = ()=>{
   if(!confirm('Set everyone to Absent for today?')) return;
   attendance = {};
-  students.forEach((s,i)=> attendance[s.roll || ('i'+i)] = 'absent');
+  students.forEach(s=> attendance[s.regNo] = 'absent');
   saveAttendance(); renderAttendanceGrid();
 };
 saveBtn.onclick = ()=>{ saveAttendance(); alert('Saved today attendance.'); };
 
-/* QR generation & scanning */
-function generateQRForStudent(s){
-  const data = `sangfa:${currentClass}:${s.roll || ''}`;
-  qrPreview.innerHTML = '';
-  QRCode.toDataURL(data, {width:400}, function (err, url) {
-    if(err) return alert('QR gen error');
+/* ---------------- QR generation & scanning ---------------- */
+async function generateQRForStudent(s){
+  const data = `sangfa:${currentClass}:${s.regNo}`;
+  try{
+    const url = await QRCode.toDataURL(data, {width:400});
+    qrPreview.innerHTML = '';
     const img = document.createElement('img'); img.src=url; img.style.maxWidth='100%';
-    const dl = document.createElement('a'); dl.href=url; dl.download = `${(s.roll||s.name)}_qr.png`; dl.textContent='Download QR';
-    dl.className='btn'; dl.style.display='inline-block'; dl.style.marginTop='8px';
+    const dl = document.createElement('a'); dl.href=url; dl.download = `${(s.regNo||s.name)}_qr.png`; dl.textContent='Download QR'; dl.className='btn'; dl.style.display='inline-block'; dl.style.marginTop='8px';
     qrPreview.appendChild(img); qrPreview.appendChild(dl);
-  });
+  }catch(e){ alert('QR error'); }
 }
 genQRBtn.onclick = ()=>{
-  const idx = qrStudentSelect.selectedIndex;
-  if(idx < 0) return alert('Choose student first');
-  const s = students[idx];
+  const val = qrStudentSelect.value;
+  if(!val) return alert('Choose a student');
+  const s = students.find(x=>x.regNo===val);
+  if(!s) return alert('Student not found');
   generateQRForStudent(s);
 };
 
-let scanning=false, videoStream=null;
 scanQRBtn.onclick = async ()=>{
   if(scanning){ stopScan(); return; }
-  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return alert('Camera not supported on this browser.');
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return alert('Camera not supported');
   scannerArea.innerHTML = '';
   const video = document.createElement('video'); video.setAttribute('playsinline','true'); video.style.width='100%'; scannerArea.appendChild(video);
-  scanning=true; scanQRBtn.textContent='Stop Scan';
+  scanning = true; scanQRBtn.textContent='Stop Scan';
   try{
     const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
     video.srcObject = stream; video.play(); videoStream = stream;
@@ -533,311 +556,125 @@ scanQRBtn.onclick = async ()=>{
     };
     requestAnimationFrame(tick);
   }catch(e){
-    scanning=false; scanQRBtn.textContent='Scan'; alert('Camera permission denied or error.');
+    scanning=false; scanQRBtn.textContent='Scan'; alert('Camera error or permission denied.');
   }
 };
-function stopScan(){
-  scanning=false; scanQRBtn.textContent='Scan';
-  if(videoStream){ videoStream.getTracks().forEach(t=>t.stop()); videoStream=null; }
-  scannerArea.innerHTML='';
-}
-
+function stopScan(){ scanning=false; scanQRBtn.textContent='Scan'; if(videoStream){ videoStream.getTracks().forEach(t=>t.stop()); videoStream=null;} scannerArea.innerHTML=''; }
 function processQRData(data){
-  if(!data.startsWith('sangfa:')) return alert('Unknown QR.');
-  const parts = data.split(':');
-  const cls = parts[1] || currentClass;
-  const roll = parts[2] || '';
+  if(!data.startsWith('sangfa:')) return alert('Unknown QR');
+  const parts = data.split(':'); const cls = parts[1] || currentClass; const r = parts[2] || '';
   if(cls !== currentClass){
-    if(!confirm(`QR is for class "${cls}". Switch to that class and mark?`)) return;
-    // require admin PIN to switch to different class
-    const assigned = loadJSON(LS_KEY_DEVICE_ASSIGN, null);
-    if(assigned && assigned !== cls){
-      const pin = prompt('Enter Admin PIN to switch class');
-      if(!pin) return;
-      if(hashPin(pin) !== (config && config.adminPinHash)) return alert('Wrong PIN');
-    }
+    if(!confirm(`This QR is for class "${cls}". Switch and mark?`)) return;
     switchClass(cls);
   }
-  const idx = students.findIndex(s => s.roll === roll);
+  const idx = students.findIndex(s=>s.regNo === r);
   if(idx >= 0){
-    const key = students[idx].roll || ('i'+idx);
-    attendance[key] = 'present';
-    saveAttendance(); renderAttendanceGrid();
+    attendance[r] = 'present';
+    saveAttendance();
+    renderAttendanceGrid();
     alert(students[idx].name + ' marked Present.');
   }else{
-    alert('Student with roll '+roll+' not found in current class.');
+    alert('Student with Reg ' + r + ' not found in current class.');
   }
 }
 
-/* Class switching with device assignment + PIN protection */
-function attemptSwitch(targetClass){
-  const assigned = loadJSON(LS_KEY_DEVICE_ASSIGN, null);
-  // if no device assigned, allow switching (admin should assign)
-  if(!assigned){
-    // require PIN to switch classes (to avoid accidental public switching)
-    const pin = prompt('Enter Admin PIN to switch class (no device assigned)');
-    if(!pin) return;
-    if(hashPin(pin) !== (config && config.adminPinHash)) return alert('Wrong PIN');
-    switchClass(targetClass);
-    return;
-  }
-  // if assigned and matches targetClass: allow
-  if(assigned === targetClass){
-    switchClass(targetClass); return;
-  }
-  // assigned exists and different -> require admin PIN
-  const pin = prompt('Enter Admin PIN to switch class');
-  if(!pin) return;
-  if(hashPin(pin) !== (config && config.adminPinHash)) return alert('Wrong PIN');
-  switchClass(targetClass);
-}
-
-setClassBtn.onclick = ()=>{
-  const val = (classSelect.value || '').trim();
-  if(!val) return alert('Type class/batch name');
-  if(!classes.includes(val)) classes.push(val);
-  currentClass = val;
-  saveJSON(LS_KEY_CLASSES, classes);
-  loadStudents(); loadAttendance();
-  classSelect.value = '';
-  alert('Class set to ' + currentClass);
-};
-
-function switchClass(name){
-  if(!name) return;
-  if(!classes.includes(name)) classes.push(name);
-  currentClass = name;
-  saveJSON(LS_KEY_CLASSES, classes);
-  classSelect.value = '';
-  loadStudents(); loadAttendance();
-}
-
-/* ---------------- Admin + Device Assign ---------------- */
+/* ---------------- Admin panel & device assign ---------------- */
 adminBtn.onclick = ()=> {
-  // ask PIN if already set
-  if(config && config.adminPinHash){
-    const pin = prompt('Enter Admin PIN');
-    if(!pin) return;
-    if(hashPin(pin) !== config.adminPinHash) return alert('Wrong PIN');
+  // If device assigned to some trainer and current device != assigned and user not admin -> deny
+  const device = loadJSON(LS_DEVICE, null);
+  if(device && device.deviceId && device.assignedTo){
+    // if device assigned and current device is not same owner, ask admin pin to open admin panel
+    // allow open but force PIN entry to change assignment
   }
-  // open admin modal
-  modal.style.display = 'flex';
+  modal.style.display='flex';
   firebaseConfigBox.value = JSON.stringify(config.firebaseConfig || {});
-  populateDeviceAssignSelect();
+  refreshDeviceUI();
 };
-
 closeModal.onclick = ()=> modal.style.display='none';
-
-function hashPin(pin){ let h=0; for(let i=0;i<pin.length;i++){ h = ((h<<5)-h) + pin.charCodeAt(i); h |= 0; } return String(h); }
 
 savePinBtn.onclick = ()=>{
   const val = adminPinInput.value.trim();
   if(!/^\d{4,8}$/.test(val)) return alert('PIN must be 4-8 digits');
   config.adminPinHash = hashPin(val);
-  saveJSON(LS_KEY_CONFIG, config);
+  saveConfig();
   adminPinInput.value='';
   alert('Admin PIN saved.');
 };
 
-/* Device assignment */
-function populateDeviceAssignSelect(){
-  deviceAssignSelect.innerHTML = '';
-  classes.forEach(c=>{
-    const opt = document.createElement('option'); opt.value = c; opt.textContent = c;
-    deviceAssignSelect.appendChild(opt);
+function refreshDeviceUI(){
+  // fill device select with classes/trainer options
+  deviceAssignSelect.innerHTML='';
+  classes.forEach(c => {
+    const opt=document.createElement('option'); opt.value=c; opt.textContent=c; deviceAssignSelect.appendChild(opt);
   });
-}
-assignDeviceBtn.onclick = ()=>{
-  const cls = deviceAssignSelect.value;
-  if(!cls) return alert('Choose class to assign this device');
-  saveJSON(LS_KEY_DEVICE_ASSIGN, cls);
-  currentClass = cls;
-  loadStudents(); loadAttendance();
-  updateDeviceAssignStatus();
-  alert('Device assigned to ' + cls);
-};
-clearAssignBtn.onclick = ()=>{
-  if(!confirm('Clear device assignment?')) return;
-  localStorage.removeItem(LS_KEY_DEVICE_ASSIGN);
-  updateDeviceAssignStatus();
-  alert('Device assignment cleared. Admin PIN will be required for class switching.');
-};
-function updateDeviceAssignStatus(){
-  const assigned = loadJSON(LS_KEY_DEVICE_ASSIGN, null);
-  deviceAssignStatus.textContent = assigned ? `This device assigned to: ${assigned}` : 'No device assignment (Admin required to switch classes).';
+  const device = loadJSON(LS_DEVICE, null);
+  if(device && device.assignedTo){
+    deviceAssignedText.textContent = `This device assigned to: ${device.assignedTo}`;
+  } else deviceAssignedText.textContent = 'Device not assigned';
 }
 
-/* ---------------- Firebase optional ---------------- */
+assignDeviceBtn.onclick = ()=>{
+  const target = deviceAssignSelect.value;
+  if(!target) return alert('Choose trainer/class to assign');
+  const deviceObj = { deviceId: navigator.userAgent || 'web-client', assignedTo: target, assignedAt: new Date().toISOString() };
+  saveJSON(LS_DEVICE, deviceObj);
+  alert('Device assigned to ' + target);
+  refreshDeviceUI();
+};
+
+clearDeviceBtn.onclick = ()=>{
+  if(!confirm('Clear device assignment?')) return;
+  localStorage.removeItem(LS_DEVICE);
+  alert('Device assignment cleared');
+  refreshDeviceUI();
+};
+
+/* ---------------- Firebase helpers (optional) ---------------- */
 saveFirebaseBtn.onclick = ()=>{
   try{
     const conf = JSON.parse(firebaseConfigBox.value || '{}');
     config.firebaseConfig = conf;
-    saveJSON(LS_KEY_CONFIG, config);
-    alert('Firebase config saved. Click Connect to finish.');
+    saveConfig();
+    alert('Firebase config saved (local). Click Connect to sync.');
   }catch(e){ alert('Invalid JSON'); }
 };
-
 connectFirebaseBtn.onclick = async ()=>{
-  if(!config.firebaseConfig || !config.firebaseConfig.apiKey) return alert('Save firebase config first.');
-  try{
-    await loadFirebaseSDK();
-    if(!firebaseApp){
-      firebaseApp = firebase.initializeApp(config.firebaseConfig);
-      firestore = firebase.firestore();
-    }
-    firebaseStatus.textContent = 'Connected to Firebase';
-    await syncToCloud();
-    alert('Cloud sync complete (students + today).');
-  }catch(e){ console.error(e); alert('Firebase connect error: '+(e.message||e)); }
+  if(!config.firebaseConfig || !config.firebaseConfig.apiKey) return alert('Save firebase config first');
+  alert('Firebase sync feature is optional and requires a Firebase project. Configure and test separately.');
 };
 
-async function loadFirebaseSDK(){
-  if(window.firebase) return;
-  return new Promise((res, rej)=>{
-    const s = document.createElement('script'); s.src = 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js';
-    s.onload = ()=>{
-      const s2 = document.createElement('script'); s2.src = 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js';
-      s2.onload = ()=> res();
-      s2.onerror = rej;
-      document.head.appendChild(s2);
-    };
-    s.onerror = rej;
-    document.head.appendChild(s);
-  });
-}
-
-async function syncToCloud(){
-  if(!firestore) return;
-  await firestore.collection('sangfa').doc('students').set({[currentClass]: students}, {merge:true});
-  await firestore.collection('sangfa').doc('attendance').set({[currentClass + '_' + todayStr()]: attendance}, {merge:true});
-}
-
-/* ---------------- FEES MODULE ---------------- */
-function ensureMonthOptions(){
-  feeMonthSelect.innerHTML = '';
-  const now = new Date();
-  for(let i=0;i<8;i++){
-    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
-    const key = monthKeyFor(d);
-    const opt = document.createElement('option'); opt.value = key; opt.textContent = key;
-    feeMonthSelect.appendChild(opt);
-  }
-  feeMonthSelect.value = monthKeyFor(new Date());
-}
-ensureMonthOptions();
-
-setDefaultFeeBtn.onclick = ()=>{
-  const amount = Number(feeAmountInput.value || 0);
-  if(!amount || isNaN(amount)) return alert('Enter a valid amount');
-  const month = feeMonthSelect.value;
-  const fees = loadJSON(feesKeyFor(currentClass, month), {});
-  students.forEach((s,i)=>{
-    const key = s.roll || ('i'+i);
-    if(!fees[key]) fees[key] = {amount: amount, status: 'unpaid', paidDate: null};
-  });
-  saveJSON(feesKeyFor(currentClass, month), fees);
-  alert('Default fee set for ' + month);
+/* ---------------- Buttons wiring ---------------- */
+setClassBtn.onclick = ()=>{
+  const v=(classSelect.value||'').trim();
+  if(!v) return alert('Type class/trainer name');
+  if(!classes.includes(v)) classes.push(v);
+  currentClass = v;
+  saveJSON(LS_CLASSES, classes);
+  loadStudents(); loadAttendance(); renderUI();
+  alert('Class set to ' + currentClass);
 };
 
-openFeesListBtn.onclick = ()=> renderFeesList();
-exportFeesCSVBtn.onclick = ()=> exportFeesCSV();
-combinedReportBtn.onclick = ()=> showCombinedReportModal();
+exportStudentsBtn.onclick = exportStudentsCSV;
+exportBtn.onclick = exportTodayCSV;
+exportDayBtn.onclick = exportTodayCSV;
+exportMonthlyCSV.onclick = exportMonthlyCSV;
+monthlyReportBtn.onclick = showMonthlyReport;
+feesReportBtn.onclick = exportMonthlyFeesCSV;
+clearAllStudentsBtn.onclick = ()=> { if(!confirm('Delete ALL saved students?')) return; students=[]; saveStudents(); loadAttendance(); };
 
-function renderFeesList(){
-  const month = feeMonthSelect.value;
-  const fees = loadJSON(feesKeyFor(currentClass, month), {});
-  feesListArea.innerHTML = '';
-  if(students.length === 0) { feesListArea.textContent = 'No students in this class.'; return; }
-  students.forEach((s,i)=>{
-    const key = s.roll || ('i'+i);
-    const f = fees[key] || {amount:'', status:'unpaid', paidDate:null};
-    const row = document.createElement('div'); row.style.display='flex'; row.style.gap='8px'; row.style.alignItems='center'; row.style.marginBottom='6px';
-    row.innerHTML = `<div style="width:180px">${s.name} (${s.roll||''})</div>`;
-    const amt = document.createElement('input'); amt.value = f.amount || ''; amt.style.width='110px'; amt.style.padding='6px'; amt.style.borderRadius='6px'; amt.style.border='1px solid #e2e8f0';
-    const statusBtn = document.createElement('button'); statusBtn.className='btn ghost'; statusBtn.textContent = (f.status === 'paid') ? 'Paid' : 'Mark Paid';
-    const paidDateSpan = document.createElement('div'); paidDateSpan.className='smallmuted'; paidDateSpan.style.minWidth='120px'; paidDateSpan.textContent = f.paidDate || '';
-    const markToggle = document.createElement('button'); markToggle.className='btn'; markToggle.textContent = 'Toggle';
-    amt.onchange = ()=>{
-      const feesNew = loadJSON(feesKeyFor(currentClass, month), {});
-      feesNew[key] = feesNew[key] || {amount:0, status:'unpaid', paidDate:null};
-      feesNew[key].amount = Number(amt.value || 0);
-      saveJSON(feesKeyFor(currentClass, month), feesNew);
-    };
-    statusBtn.onclick = ()=>{
-      const feesNew = loadJSON(feesKeyFor(currentClass, month), {});
-      feesNew[key] = feesNew[key] || {amount:0, status:'unpaid', paidDate:null};
-      if(feesNew[key].status === 'paid'){ feesNew[key].status = 'unpaid'; feesNew[key].paidDate = null; statusBtn.textContent='Mark Paid'; paidDateSpan.textContent=''; }
-      else { feesNew[key].status = 'paid'; feesNew[key].paidDate = new Date().toLocaleDateString(); statusBtn.textContent='Paid'; paidDateSpan.textContent = feesNew[key].paidDate; }
-      saveJSON(feesKeyFor(currentClass, month), feesNew);
-    };
-    markToggle.onclick = ()=>{ const amtVal = prompt('Enter amount received for '+ s.name, f.amount || ''); if(amtVal === null) return; const feesNew = loadJSON(feesKeyFor(currentClass, month), {}); feesNew[key] = { amount: Number(amtVal||0), status:'paid', paidDate: new Date().toLocaleDateString() }; saveJSON(feesKeyFor(currentClass, month), feesNew); renderFeesList(); };
-    row.appendChild(amt); row.appendChild(statusBtn); row.appendChild(paidDateSpan); row.appendChild(markToggle);
-    feesListArea.appendChild(row);
-  });
-}
-
-function exportFeesCSV(){
-  const month = feeMonthSelect.value;
-  const fees = loadJSON(feesKeyFor(currentClass, month), {});
-  const rows = ['name,roll,amount,status,paidDate'];
-  students.forEach((s,i)=>{
-    const key = s.roll || ('i'+i);
-    const f = fees[key] || {amount:'', status:'unpaid', paidDate:''};
-    rows.push(`"${s.name.replace(/"/g,'""')}",${s.roll||''},${f.amount||0},${f.status},${f.paidDate||''}`);
-  });
-  downloadBlob(rows.join('\n'), `${currentClass}_fees_${month}.csv`);
-}
-
-function showCombinedReportModal(){
-  const month = feeMonthSelect.value;
-  const totals = collectMonthData(Number(month.slice(0,4)), Number(month.slice(5,7)));
-  const fees = loadJSON(feesKeyFor(currentClass, month), {});
-  const report = [];
-  students.forEach((s,i)=>{
-    const key = s.roll || ('i'+i);
-    const att = totals[key] || {present:0, total:0};
-    const percent = att.total ? Math.round((att.present / att.total) * 100) : 0;
-    const f = fees[key] || {amount:'', status:'unpaid', paidDate:''};
-    report.push({
-      name: s.name,
-      roll: s.roll||'',
-      present: att.present,
-      totalDays: att.total,
-      attendancePercent: percent,
-      feeAmount: f.amount || 0,
-      feeStatus: f.status || 'unpaid',
-      paidDate: f.paidDate || ''
-    });
-  });
-  let text = `Combined Report — ${currentClass} — ${month}\n\n`;
-  report.forEach(r=>{
-    text += `${r.name} (${r.roll}) — Attendance: ${r.present}/${r.totalDays} (${r.attendancePercent}%), Fee: ${r.feeStatus} ₹${r.feeAmount} ${r.paidDate? '- Paid: ' + r.paidDate : ''}\n`;
-  });
-  if(confirm(text + '\n\nDo you want to download CSV of this report?')){
-    const rows = ['name,roll,present,totalDays,attendancePercent,feeAmount,feeStatus,paidDate'];
-    report.forEach(r => rows.push(`"${r.name.replace(/"/g,'""')}",${r.roll},${r.present},${r.totalDays},${r.attendancePercent},${r.feeAmount},${r.feeStatus},${r.paidDate}`));
-    downloadBlob(rows.join('\n'), `${currentClass}_combined_report_${month}.csv`);
-  }
-}
-
-/* ---------------- Helper: export all student QR images (simple preview approach) ---------------- */
-function exportAllQRsPreview(){
-  alert('Bulk ZIP creation not included. Use individual QR downloads.');
-}
-
-/* ------------------ init helpers ------------------ */
 window.addEventListener('storage', ()=> { loadStudents(); loadAttendance(); });
 
-function initLoad(){
-  // ensure currentClass exists
-  if(!classes.includes(currentClass)) classes.unshift(currentClass);
-  classNameText.textContent = currentClass;
+/* ---------------- Init ---------------- */
+function init(){
+  // default classes already set
+  const savedDevice = loadJSON(LS_DEVICE, null);
+  currentClass = localStorage.getItem(LS_CLASSES) ? loadJSON(LS_CLASSES)[0] : currentClass;
+  classSelect.value = currentClass;
   loadStudents(); loadAttendance();
+  renderUI();
 }
-initLoad();
+init();
 
-/* End of script */
 </script>
-
 </body>
 </html>
